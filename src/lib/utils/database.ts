@@ -34,11 +34,11 @@ if (!cached) {
 }
 
 async function dbConnect() {
-  if (cached && cached.conn) {
+  if (cached.conn) {
     return cached.conn;
   }
 
-  if (!cached || !cached.promise) {
+  if (!cached.promise) {
     const opts = {
       bufferCommands: false,
     };
@@ -50,17 +50,13 @@ async function dbConnect() {
   }
 
   try {
-    if (cached) {
-      cached.conn = await cached.promise;
-    }
+    cached.conn = await cached.promise;
   } catch (e) {
-    if (cached) {
-      cached.promise = null;
-    }
+    cached.promise = null;
     throw e;
   }
 
-  return cached?.conn || null;
+  return cached.conn;
 }
 
 export default dbConnect;
