@@ -1,0 +1,342 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-amiri: var(--font-amiri);
+  --font-tajawal: var(--font-tajawal);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* Arabic RTL Support */
+html[dir="rtl"] {
+  direction: rtl;
+}
+
+html[dir="rtl"] body {
+  direction: rtl;
+  text-align: right;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-tajawal), 'Tajawal', Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+}
+
+/* RTL specific adjustments */
+[dir="rtl"] .flex {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .space-x-4 > * + * {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+[dir="rtl"] .space-x-8 > * + * {
+  margin-left: 0;
+  margin-right: 2rem;
+}
+
+/* Fix icons and buttons in RTL */
+[dir="rtl"] .mr-2 {
+  margin-right: 0;
+  margin-left: 0.5rem;
+}
+
+[dir="rtl"] .ml-2 {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+/* Fix search icon position */
+[dir="rtl"] .absolute.left-3 {
+  left: auto;
+  right: 0.75rem;
+}
+
+/* Fix eye icon position in password fields */
+[dir="rtl"] .absolute.right-0 {
+  right: auto;
+  left: 0.75rem;
+}
+
+/* Fix close button position */
+[dir="rtl"] .absolute.-top-2.-right-2 {
+  right: auto;
+  left: -0.5rem;
+}
+
+/* Fix chevron icons */
+[dir="rtl"] .rotate-90 {
+  transform: rotate(-90deg);
+}
+
+/* Fix form inputs */
+[dir="rtl"] input, [dir="rtl"] textarea, [dir="rtl"] select {
+  text-align: right;
+}
+
+/* Fix padding in RTL */
+[dir="rtl"] .pl-10 {
+  padding-left: 0;
+  padding-right: 2.5rem;
+}
+
+[dir="rtl"] .pr-10 {
+  padding-right: 0;
+  padding-left: 2.5rem;
+}
+
+[dir="rtl"] .pl-3 {
+  padding-left: 0;
+  padding-right: 0.75rem;
+}
+
+[dir="rtl"] .pr-3 {
+  padding-right: 0;
+  padding-left: 0.75rem;
+}
+
+/* Arabic text improvements */
+.arabic-text {
+  font-family: var(--font-amiri), 'Amiri', serif;
+  line-height: 1.8;
+}
+
+/* Ensure proper spacing for Arabic text */
+[dir="rtl"] p, [dir="rtl"] div, [dir="rtl"] span {
+  text-align: right;
+}
+
+/* Footer RTL specific adjustments */
+[dir="rtl"] footer .flex.items-center.space-x-2 {
+  flex-direction: row-reverse;
+}
+
+/* Ensure footer text is right-aligned */
+[dir="rtl"] footer p, [dir="rtl"] footer li, [dir="rtl"] footer h3 {
+  text-align: right;
+}
+
+/* Fix footer link spacing */
+[dir="rtl"] footer .space-x-4 > * + * {
+  margin-left: 0;
+  margin-right: 1rem;
+}
+
+/* Products page RTL adjustments */
+[dir="rtl"] .products-page .flex.items-center.justify-between {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .products-page .flex.gap-2 {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .products-page .relative input {
+  text-align: right;
+  padding-left: 3rem;
+  padding-right: 1rem;
+}
+
+[dir="rtl"] .products-page .absolute.left-3 {
+  left: auto;
+  right: 0.75rem;
+}
+
+[dir="rtl"] .products-page .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
+  direction: rtl;
+}
+
+[dir="rtl"] .products-page .flex.items-center.justify-between .text-sm {
+  order: 2;
+}
+
+[dir="rtl"] .products-page .flex.items-center.justify-between .flex.items-center.gap-2 {
+  order: 1;
+}
+
+[dir="rtl"] .products-page .flex.items-center.gap-2 button:first-child {
+  order: 2;
+}
+
+[dir="rtl"] .products-page .flex.items-center.gap-2 span {
+  order: 1;
+}
+
+[dir="rtl"] .products-page .flex.items-center.gap-2 button:last-child {
+  order: 1;
+}
+
+/* Product card RTL adjustments */
+[dir="rtl"] .product-card .flex.items-center.justify-between {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .product-card .flex.items-center.mb-2 span:first-child {
+  order: 2;
+}
+
+[dir="rtl"] .product-card .flex.items-center.mb-2 span:last-child {
+  order: 1;
+}
+
+[dir="rtl"] .product-card .flex.items-center.justify-between .text-2xl {
+  order: 2;
+}
+
+[dir="rtl"] .product-card .flex.items-center.justify-between button {
+  order: 1;
+}
+
+[dir="rtl"] .product-card button .ml-2 {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+/* Product list item RTL adjustments */
+[dir="rtl"] .product-list-item .flex {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .product-list-item .flex.items-start.justify-between {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .product-list-item .flex.items-center.gap-2 {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .product-list-item .text-left {
+  text-align: right;
+}
+
+[dir="rtl"] .product-list-item button .ml-2 {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
+
+/* Filters RTL adjustments */
+[dir="rtl"] .filters-panel .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
+  direction: rtl;
+}
+
+/* Pagination RTL adjustments */
+[dir="rtl"] .pagination .flex.items-center.gap-2 {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .pagination .flex.items-center.gap-2 button:first-child {
+  order: 2;
+}
+
+[dir="rtl"] .pagination .flex.items-center.gap-2 span {
+  order: 1;
+}
+
+[dir="rtl"] .pagination .flex.items-center.gap-2 button:last-child {
+  order: 1;
+}
+
+[dir="rtl"] .pagination button .rotate-180 {
+  transform: rotate(0deg);
+}
+
+[dir="rtl"] .pagination button:first-child svg {
+  transform: rotate(180deg);
+}
+
+/* Categories page RTL adjustments */
+[dir="rtl"] .categories-page .flex.items-center.justify-between {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .categories-page .grid.grid-cols-1.gap-6 {
+  direction: rtl;
+}
+
+[dir="rtl"] .categories-page .flex.items-start.justify-between {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .categories-page .flex.items-start.justify-between .flex-1 {
+  order: 2;
+}
+
+[dir="rtl"] .categories-page .flex.items-start.justify-between .flex.gap-2 {
+  order: 1;
+}
+
+[dir="rtl"] .categories-page .flex.gap-2 {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .categories-page .flex.justify-end.gap-3 {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .categories-page .flex.justify-center.gap-3 {
+  flex-direction: row-reverse;
+}
+
+/* Modal RTL adjustments */
+[dir="rtl"] .modal .flex.items-center.justify-between {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .modal .flex.items-center.justify-between h3 {
+  order: 2;
+}
+
+[dir="rtl"] .modal .flex.items-center.justify-between button {
+  order: 1;
+}
+
+/* Ensure all input elements have black text */
+input, textarea, select {
+  color: #000000 !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #6b7280 !important; /* Gray placeholder text */
+}
+
+/* Ensure form inputs in dark contexts also have black text */
+input:focus, textarea:focus, select:focus {
+  color: #000000 !important;
+}
+
+/* Override any Tailwind classes that might set different text colors */
+input.text-gray-900,
+input.text-gray-800,
+input.text-gray-700,
+textarea.text-gray-900,
+textarea.text-gray-800,
+textarea.text-gray-700,
+select.text-gray-900,
+select.text-gray-800,
+select.text-gray-700 {
+  color: #000000 !important;
+}
+
+/* Fix footer logo and text spacing */
+[dir="rtl"] footer .flex.items-center.justify-end.space-x-2 > * + * {
+  margin-left: 0;
+  margin-right: 0.5rem;
+}
