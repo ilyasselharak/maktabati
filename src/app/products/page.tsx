@@ -5,13 +5,12 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
   Search,
-  ChevronDown,
   ChevronRight,
   Package,
   Grid,
   List,
-  SlidersHorizontal,
   X,
+  Check,
 } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 
@@ -53,7 +52,7 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
   const [minPrice, setMinPrice] = useState("");
@@ -61,9 +60,8 @@ export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [showFilters, setShowFilters] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]); // Used in useEffect and addToCart
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartCount, setCartCount] = useState(0);
 
   // Load cart and settings from localStorage on component mount
@@ -96,11 +94,11 @@ export default function ProductsPage() {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         search: searchTerm,
-        category: selectedCategory,
         sortBy,
         sortOrder,
         ...(minPrice && { minPrice }),
         ...(maxPrice && { maxPrice }),
+        ...(selectedCategories.length > 0 && { categories: selectedCategories.join(',') }),
       });
 
       const response = await fetch(`/api/products?${params}`);
@@ -118,7 +116,7 @@ export default function ProductsPage() {
   }, [
     currentPage,
     searchTerm,
-    selectedCategory,
+    selectedCategories,
     sortBy,
     sortOrder,
     minPrice,
@@ -146,7 +144,7 @@ export default function ProductsPage() {
   }, [
     currentPage,
     searchTerm,
-    selectedCategory,
+    selectedCategories,
     sortBy,
     sortOrder,
     minPrice,
@@ -162,11 +160,20 @@ export default function ProductsPage() {
 
   const clearFilters = () => {
     setSearchTerm("");
-    setSelectedCategory("all");
+    setSelectedCategories([]);
     setSortBy("createdAt");
     setSortOrder("desc");
     setMinPrice("");
     setMaxPrice("");
+    setCurrentPage(1);
+  };
+
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(categoryId) 
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
+    );
     setCurrentPage(1);
   };
 
@@ -202,7 +209,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white" dir="rtl">
+    <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Site Header */}
       <Header
         cartCount={cartCount}
@@ -212,9 +219,10 @@ export default function ProductsPage() {
       />
 
       {/* Page Header */}
-      <div className="bg-gray-50 shadow-sm">
+      <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
+            
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setViewMode("grid")}
@@ -247,7 +255,7 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          {/* Search and Filters */}
+          {/* Search Bar */}
           <div className="flex flex-col sm:flex-row gap-4">
             <form onSubmit={handleSearch} className="flex-1">
               <div className="relative">
@@ -256,30 +264,34 @@ export default function ProductsPage() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="البحث في الاسم أو العلامات أو الوصف..."
-                  className="w-full pl-10 pr-4 py-3 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pr-10 pl-4 py-3 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-right"
+                  dir="rtl"
                 />
-                <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
+                <Search className="absolute right-3 top-3.5 h-5 w-5 text-gray-400" />
               </div>
             </form>
 
+            {/* Sort and Clear Filters */}
             <div className="flex gap-2">
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              <select
+                value={`${sortBy}-${sortOrder}`}
+                onChange={(e) => {
+                  const [newSortBy, newSortOrder] = e.target.value.split('-');
+                  setSortBy(newSortBy);
+                  setSortOrder(newSortOrder);
+                  setCurrentPage(1);
+                }}
+                className="px-4 py-3 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               >
-                <SlidersHorizontal className="h-5 w-5 text-black" />
-                <span className="text-black">الفلاتر</span>
-                <ChevronDown
-                  className={`h-4 w-4 text-black transition-transform ${
-                    showFilters ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+                <option value="createdAt-desc">الأحدث</option>
+                <option value="createdAt-asc">الأقدم</option>
+                <option value="name-asc">الاسم أ-ي</option>
+                <option value="name-desc">الاسم ي-أ</option>
+                <option value="price-asc">السعر من الأقل</option>
+                <option value="price-desc">السعر من الأعلى</option>
+              </select>
 
-              {(searchTerm ||
-                selectedCategory !== "all" ||
-                minPrice ||
-                maxPrice) && (
+              {(searchTerm || selectedCategories.length > 0 || minPrice || maxPrice) && (
                 <button
                   onClick={clearFilters}
                   className="flex items-center gap-2 px-4 py-3 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100"
@@ -290,54 +302,159 @@ export default function ProductsPage() {
               )}
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Filters Panel */}
-          {showFilters && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg border filters-panel">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    الفئة
-                  </label>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => {
-                      setSelectedCategory(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full p-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+      {/* Main Content */}
+      <div dir="rtl" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex gap-8">
+          {/* Categories Sidebar */}
+          
+
+          {/* Products Grid */}
+          <div className="flex-1">
+            {loading ? (
+              <div
+                className={`grid gap-4 ${
+                  viewMode === "grid"
+                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                    : "grid-cols-1"
+                }`}
+              >
+                {[...Array(12)].map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse"
                   >
-                    <option value="all">جميع الفئات</option>
-                    {categories.map((category) => (
-                      <option key={category._id} value={category._id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
+                    <div className="h-48 bg-gray-200"></div>
+                    <div className="p-4">
+                      <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                      <div className="h-5 bg-gray-200 rounded w-1/4"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : products.length === 0 ? (
+              <div className="text-center py-12">
+                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  لا توجد منتجات
+                </h3>
+                <p className="text-gray-500">جرب تغيير معايير البحث أو الفلاتر</p>
+              </div>
+            ) : (
+              <>
+                <div
+                  className={`grid gap-4 ${
+                    viewMode === "grid"
+                      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                      : "grid-cols-1"
+                  }`}
+                >
+                  {products.map((product) => (
+                    <div
+                      key={product._id}
+                      className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow ${
+                        viewMode === "list" ? "flex" : ""
+                      }`}
+                    >
+                      {/* Product Image */}
+                      <div className={`${viewMode === "list" ? "w-48 h-48" : "h-48"} relative`}>
+                        {product.images && product.images.length > 0 ? (
+                          <img
+                            src={product.images[0]}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                            <Package className="h-12 w-12 text-gray-400" />
+                          </div>
+                        )}
+                        {product.stock === 0 && (
+                          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                            <span className="text-white font-semibold">نفذ المخزون</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Product Info */}
+                      <div className={`p-4 ${viewMode === "list" ? "flex-1" : ""}`}>
+                        <div className="mb-2 text-right">
+                          <span className="text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                            {product.category.name}
+                          </span>
+                        </div>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-2 line-clamp-2 text-right">
+                          {product.name}
+                        </h3>
+                        <p className="text-xs text-gray-600 mb-3 line-clamp-2 text-right">
+                          {product.description}
+                        </p>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-lg font-bold text-gray-900">
+                            {product.price} ر.س
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            متوفر: {product.stock}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => addToCart(product)}
+                          disabled={product.stock === 0}
+                          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {product.stock === 0 ? "نفذ المخزون" : "أضف للسلة"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    الترتيب حسب
-                  </label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => {
-                      setSortBy(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full p-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    <option value="createdAt">التاريخ</option>
-                    <option value="name">الاسم</option>
-                    <option value="price">السعر</option>
-                  </select>
-                </div>
+                {/* Pagination */}
+                {pagination && pagination.totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-8 gap-4">
+                    <div className="text-sm text-gray-700 text-center sm:text-right">
+                      عرض {products.length} من أصل {pagination.totalProducts} منتج
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    السعر الأدنى
-                  </label>
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={!pagination.hasPrev}
+                        className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      >
+                        <ChevronRight className="h-4 w-4 text-black" />
+                        <span className="hidden sm:inline text-black">السابق</span>
+                      </button>
+
+                      <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm">
+                        {pagination.currentPage} من {pagination.totalPages}
+                      </span>
+
+                      <button
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={!pagination.hasNext}
+                        className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      >
+                        <span className="hidden sm:inline text-black">التالي</span>
+                        <ChevronRight className="h-4 w-4 rotate-180 text-black" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          <div className="w-64 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 text-right">الفئات</h3>
+              
+              {/* Price Range */}
+              <div className="mb-6">
+                <h4 className="text-sm font-medium text-gray-700 mb-3 text-right">نطاق السعر</h4>
+                <div className="space-y-2">
                   <input
                     type="number"
                     value={minPrice}
@@ -345,15 +462,10 @@ export default function ProductsPage() {
                       setMinPrice(e.target.value);
                       setCurrentPage(1);
                     }}
-                    placeholder="0"
-                    className="w-full p-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="الحد الأدنى"
+                    className="w-full p-2 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-right"
+                    dir="rtl"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    السعر الأعلى
-                  </label>
                   <input
                     type="number"
                     value={maxPrice}
@@ -361,128 +473,56 @@ export default function ProductsPage() {
                       setMaxPrice(e.target.value);
                       setCurrentPage(1);
                     }}
-                    placeholder="1000"
-                    className="w-full p-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    placeholder="الحد الأعلى"
+                    className="w-full p-2 text-sm text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-right"
+                    dir="rtl"
                   />
                 </div>
               </div>
+
+              {/* Categories */}
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <label
+                    key={category._id}
+                    className="flex items-center space-x-reverse space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg"
+                  >
+                    <span className="text-sm text-gray-700 text-right flex-1">{category.name}</span>
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={selectedCategories.includes(category._id)}
+                        onChange={() => handleCategoryToggle(category._id)}
+                        className="sr-only"
+                      />
+                      <div
+                        className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
+                          selectedCategories.includes(category._id)
+                            ? "bg-indigo-600 border-indigo-600"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {selectedCategories.includes(category._id) && (
+                          <Check className="w-3 h-3 text-white" />
+                        )}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              {/* Clear Filters */}
+              {selectedCategories.length > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="w-full mt-4 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50 text-center"
+                >
+                  مسح الفلاتر
+                </button>
+              )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
-
-      {/* Products Grid/List */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading ? (
-          <div
-            className={`grid gap-6 ${
-              viewMode === "grid"
-                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                : "grid-cols-1"
-            }`}
-          >
-            {[...Array(12)].map((_, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse"
-              >
-                <div className="h-64 bg-gray-200"></div>
-                <div className="p-6">
-                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-                  <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-12">
-            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              لا توجد منتجات
-            </h3>
-            <p className="text-gray-500">جرب تغيير معايير البحث أو الفلاتر</p>
-          </div>
-        ) : (
-          <>
-            <div
-              className={`grid gap-6 ${
-                viewMode === "grid"
-                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                  : "grid-cols-1"
-              }`}
-            >
-              {products.map((product) => (
-                <ProductCard
-                  key={product._id}
-                  product={product}
-                  cartItems={cartItems}
-                  onAddToCart={addToCart}
-                  onUpdateQuantity={(product, quantity) => {
-                    // Update quantity in cart
-                    setCartItems((prevItems) => {
-                      const newItems = prevItems.map((item) =>
-                        item.product._id === product._id
-                          ? { ...item, quantity }
-                          : item
-                      );
-                      updateCartInStorage(newItems);
-                      return newItems;
-                    });
-                  }}
-                  onRemoveFromCart={(product) => {
-                    // Remove from cart
-                    setCartItems((prevItems) => {
-                      const newItems = prevItems.filter(
-                        (item) => item.product._id !== product._id
-                      );
-                      updateCartInStorage(newItems);
-                      return newItems;
-                    });
-                  }}
-                  className={
-                    viewMode === "list"
-                      ? "flex flex-col sm:flex-row max-w-none"
-                      : ""
-                  }
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {pagination && pagination.totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-8 pagination gap-4">
-                <div className="text-sm text-gray-700 text-center sm:text-left">
-                  عرض {products.length} من أصل {pagination.totalProducts} منتج
-                </div>
-
-                <div className="flex items-center justify-center gap-2">
-                  <button
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={!pagination.hasPrev}
-                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  >
-                    <ChevronRight className="h-4 w-4 text-black" />
-                    <span className="hidden sm:inline text-black">السابق</span>
-                  </button>
-
-                  <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm">
-                    {pagination.currentPage} من {pagination.totalPages}
-                  </span>
-
-                  <button
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={!pagination.hasNext}
-                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  >
-                    <span className="hidden sm:inline text-black">التالي</span>
-                    <ChevronRight className="h-4 w-4 rotate-180 text-black" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
       </div>
 
       {/* Footer */}

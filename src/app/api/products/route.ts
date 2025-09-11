@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
     const category = searchParams.get("category");
+    const categories = searchParams.get("categories");
     const search = searchParams.get("search");
     const sortBy = searchParams.get("sortBy") || "createdAt";
     const sortOrder = searchParams.get("sortOrder") || "desc";
@@ -26,8 +27,17 @@ export async function GET(request: NextRequest) {
       | { $or: Record<string, unknown>[] }[]
     > = { isActive: true };
 
+    // Handle single category (backward compatibility)
     if (category && category !== "all") {
       query.category = category;
+    }
+
+    // Handle multiple categories
+    if (categories) {
+      const categoryIds = categories.split(',').filter(id => id.length > 0);
+      if (categoryIds.length > 0) {
+        query.category = { $in: categoryIds };
+      }
     }
 
     if (search) {
