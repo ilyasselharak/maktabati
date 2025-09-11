@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import DashboardLayout from "../../../components/DashboardLayout";
@@ -28,7 +28,7 @@ export default function EditCategoryPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const fetchCategory = async () => {
+  const fetchCategory = useCallback(async () => {
     try {
       // You would typically have a separate API endpoint to get a single category
       // For now, we'll fetch all categories and find the one we need
@@ -62,13 +62,13 @@ export default function EditCategoryPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [categoryId]);
 
   useEffect(() => {
     if (categoryId) {
       fetchCategory();
     }
-  }, [categoryId]);
+  }, [categoryId, fetchCategory]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>

@@ -61,7 +61,7 @@ export async function authenticateRequest(request: NextRequest): Promise<{
       },
       response: null,
     };
-  } catch (error) {
+  } catch {
     return {
       user: null,
       response: NextResponse.json(

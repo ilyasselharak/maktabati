@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
       } else {
         setError(data.error || "فشل تسجيل الدخول");
       }
-    } catch (_error) {
+    } catch {
       setError("خطأ في الشبكة. يرجى المحاولة مرة أخرى.");
     } finally {
       setIsLoading(false);

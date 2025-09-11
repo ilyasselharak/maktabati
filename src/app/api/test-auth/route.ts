@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       receivedData: body,
       timestamp: new Date().toISOString(),
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Invalid JSON in request body" },
       { status: 400 }
@@ -96,7 +96,7 @@ export async function PUT(request: NextRequest) {
         role: user.role,
       },
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Test upload failed" }, { status: 500 });
   }
 }

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import DashboardLayout from "../../../components/DashboardLayout";
-import { ArrowLeft, Save, X, Upload, Trash2, Plus } from "lucide-react";
+import { ArrowLeft, Save, X, Upload } from "lucide-react";
 
 interface Category {
   _id: string;
@@ -48,14 +48,7 @@ export default function EditProductPage() {
   const [newImages, setNewImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchProduct();
-      fetchCategories();
-    }
-  }, [params.id]);
-
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     try {
       const token = localStorage.getItem("adminToken");
       const response = await fetch(`/api/admin/products/${params.id}`, {
@@ -84,9 +77,9 @@ export default function EditProductPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id, router]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const token = localStorage.getItem("adminToken");
       const response = await fetch("/api/admin/categories", {
@@ -102,7 +95,14 @@ export default function EditProductPage() {
     } catch (error) {
       console.error("فشل في جلب الفئات:", error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (params.id) {
+      fetchProduct();
+      fetchCategories();
+    }
+  }, [params.id, fetchProduct, fetchCategories]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

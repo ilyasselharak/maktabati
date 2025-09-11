@@ -109,11 +109,11 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error saving order:", error);
 
     // Handle duplicate order ID
-    if (error.code === 11000) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 11000) {
       return NextResponse.json(
         { error: "حدث خطأ في إنشاء رقم الطلب. يرجى المحاولة مرة أخرى." },
         { status: 500 }
@@ -121,9 +121,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle validation errors
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map(
-        (err: any) => err.message
+    if (error && typeof error === 'object' && 'name' in error && error.name === "ValidationError" && 'errors' in error) {
+      const validationError = error as { errors: Record<string, { message: string }> };
+      const messages = Object.values(validationError.errors).map(
+        (err) => err.message
       );
       return NextResponse.json({ error: messages.join(", ") }, { status: 400 });
     }
@@ -151,7 +152,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
 
     // Build query
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     // Status filter
     if (status) {
@@ -177,7 +178,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build sort object
-    const sortOptions: any = {};
+    const sortOptions: Record<string, 1 | -1> = {};
     sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
 
     // Get orders with pagination

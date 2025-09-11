@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,7 +11,6 @@ import {
   ShoppingCart,
   Heart,
   Share2,
-  Star,
   Minus,
   Plus,
   Check,
@@ -46,11 +45,30 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [, setCartItems] = useState<CartItem[]>([]);
   const [cartCount, setCartCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const fetchProduct = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/products/${params.id}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setProduct(data.product);
+      } else {
+        console.error("Failed to fetch product:", data.error);
+        router.push("/products");
+      }
+    } catch (error) {
+      console.error("Error fetching product:", error);
+      router.push("/products");
+    } finally {
+      setLoading(false);
+    }
+  }, [params.id, router]);
 
   useEffect(() => {
     if (params.id) {
@@ -72,26 +90,7 @@ export default function ProductDetailPage() {
         console.error("Error loading cart from localStorage:", error);
       }
     }
-  }, [params.id]);
-
-  const fetchProduct = async () => {
-    try {
-      const response = await fetch(`/api/products/${params.id}`);
-      const data = await response.json();
-
-      if (response.ok) {
-        setProduct(data.product);
-      } else {
-        console.error("Failed to fetch product:", data.error);
-        router.push("/products");
-      }
-    } catch (error) {
-      console.error("Error fetching product:", error);
-      router.push("/products");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [params.id, fetchProduct]);
 
   const updateCartInStorage = (items: CartItem[]) => {
     localStorage.setItem("maktabati_cart", JSON.stringify(items));

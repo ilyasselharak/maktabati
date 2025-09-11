@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
       | string
       | boolean
       | Record<string, string | number | string[]>
-      | Record<string, any>[]
-      | { $or: Record<string, any>[] }[]
+      | Record<string, unknown>[]
+      | { $or: Record<string, unknown>[] }[]
     > = { isActive: true };
 
     if (category && category !== "all") {
