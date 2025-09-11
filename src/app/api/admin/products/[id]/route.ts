@@ -55,8 +55,16 @@ export async function PATCH(
     await dbConnect();
 
     const resolvedParams = await params;
-    const { name, description, price, categoryId, stock, isActive, images } =
-      await request.json();
+    const {
+      name,
+      description,
+      price,
+      categoryId,
+      stock,
+      isActive,
+      images,
+      tags,
+    } = await request.json();
 
     // Validate required fields
     if (!name || !description || !price || !categoryId) {
@@ -97,6 +105,7 @@ export async function PATCH(
         stock: stock !== undefined ? stock : existingProduct.stock,
         isActive: isActive !== undefined ? isActive : existingProduct.isActive,
         images: images || existingProduct.images,
+        tags: tags !== undefined ? tags : existingProduct.tags,
         updatedAt: new Date(),
       },
       { new: true }

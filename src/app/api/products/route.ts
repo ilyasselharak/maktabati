@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "12");
+    const limit = parseInt(searchParams.get("limit") || "50");
     const category = searchParams.get("category");
     const search = searchParams.get("search");
     const sortBy = searchParams.get("sortBy") || "createdAt";
@@ -19,7 +19,11 @@ export async function GET(request: NextRequest) {
     // Build query
     const query: Record<
       string,
-      string | boolean | Record<string, string | number>
+      | string
+      | boolean
+      | Record<string, string | number | string[]>
+      | Record<string, any>[]
+      | { $or: Record<string, any>[] }[]
     > = { isActive: true };
 
     if (category && category !== "all") {
@@ -27,7 +31,23 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query.$text = { $search: search };
+      // Search in both product name and tags
+      const searchTerms = search.split(" ").filter((term) => term.length > 0);
+      const searchConditions = [];
+
+      for (const term of searchTerms) {
+        searchConditions.push({
+          $or: [
+            { name: { $regex: term, $options: "i" } },
+            { description: { $regex: term, $options: "i" } },
+            { tags: { $elemMatch: { $regex: term, $options: "i" } } },
+          ],
+        });
+      }
+
+      if (searchConditions.length > 0) {
+        query.$and = searchConditions;
+      }
     }
 
     if (minPrice || maxPrice) {

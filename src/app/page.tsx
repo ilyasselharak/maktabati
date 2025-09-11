@@ -3,22 +3,20 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import {
   BookOpen,
   Calculator,
   Palette,
   PenTool,
-  Search,
-  ShoppingCart,
   Truck,
   Shield,
   Award,
-  Package,
   Heart,
   ChevronRight,
-  Menu,
-  X,
 } from "lucide-react";
+import ProductCard from "@/components/ProductCard";
 
 interface Product {
   _id: string;
@@ -32,16 +30,79 @@ interface Product {
   };
   stock: number;
   isActive: boolean;
+  tags?: string[];
+}
+
+interface CartItem {
+  product: Product;
+  quantity: number;
 }
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
     fetchFeaturedProducts();
   }, []);
+
+  useEffect(() => {
+    // Load cart from localStorage on component mount
+    const savedCart = localStorage.getItem("maktabati_cart");
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart);
+        setCartItems(parsedCart);
+        const totalCount = parsedCart.reduce(
+          (total: number, item: { quantity: number }) => total + item.quantity,
+          0
+        );
+        setCartCount(totalCount);
+      } catch (error) {
+        console.error("Error loading cart from localStorage:", error);
+      }
+    }
+  }, []);
+
+  const updateCartInStorage = (items: CartItem[]) => {
+    localStorage.setItem("maktabati_cart", JSON.stringify(items));
+    const totalCount = items.reduce((total, item) => total + item.quantity, 0);
+    setCartCount(totalCount);
+  };
+
+  const addToCart = (product: Product) => {
+    if (product.stock === 0) return;
+
+    setCartItems((prevItems) => {
+      const existingItem = prevItems.find(
+        (item) => item.product._id === product._id
+      );
+
+      let newItems;
+      if (existingItem) {
+        // Update quantity if item already exists
+        newItems = prevItems.map((item) =>
+          item.product._id === product._id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        // Add new item to cart
+        newItems = [...prevItems, { product, quantity: 1 }];
+      }
+
+      // Update localStorage and cart count
+      updateCartInStorage(newItems);
+
+      return newItems;
+    });
+
+    // Show success feedback
+    console.log(`تم إضافة ${product.name} إلى السلة`);
+  };
 
   const fetchFeaturedProducts = async () => {
     try {
@@ -116,128 +177,14 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white" dir="rtl">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center space-x-2">
-                <BookOpen className="h-8 w-8 text-indigo-600" />
-                <span className="text-2xl font-bold text-gray-900">مكتبتي</span>
-              </Link>
-            </div>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-8">
-              <Link
-                href="/"
-                className="text-gray-900 hover:text-indigo-600 font-medium"
-              >
-                الرئيسية
-              </Link>
-              <Link
-                href="/products"
-                className="text-gray-600 hover:text-indigo-600"
-              >
-                المنتجات
-              </Link>
-              <Link
-                href="/categories"
-                className="text-gray-600 hover:text-indigo-600"
-              >
-                الفئات
-              </Link>
-              <Link
-                href="/about"
-                className="text-gray-600 hover:text-indigo-600"
-              >
-                من نحن
-              </Link>
-              <Link
-                href="/contact"
-                className="text-gray-600 hover:text-indigo-600"
-              >
-                اتصل بنا
-              </Link>
-            </nav>
-
-            {/* Search and Cart */}
-            <div className="flex items-center space-x-4">
-              <div className="hidden md:block">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="البحث عن المنتجات..."
-                    className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                  <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                </div>
-              </div>
-              <button className="p-2 text-gray-600 hover:text-indigo-600">
-                <ShoppingCart className="h-6 w-6" />
-              </button>
-
-              {/* Mobile menu button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 text-gray-600 hover:text-indigo-600"
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-4">
-              <nav className="flex flex-col space-y-4">
-                <Link
-                  href="/"
-                  className="text-gray-900 hover:text-indigo-600 font-medium px-2 py-1"
-                >
-                  الرئيسية
-                </Link>
-                <Link
-                  href="/products"
-                  className="text-gray-600 hover:text-indigo-600 px-2 py-1"
-                >
-                  المنتجات
-                </Link>
-                <Link
-                  href="/categories"
-                  className="text-gray-600 hover:text-indigo-600 px-2 py-1"
-                >
-                  الفئات
-                </Link>
-                <Link
-                  href="/about"
-                  className="text-gray-600 hover:text-indigo-600 px-2 py-1"
-                >
-                  من نحن
-                </Link>
-                <Link
-                  href="/contact"
-                  className="text-gray-600 hover:text-indigo-600 px-2 py-1"
-                >
-                  اتصل بنا
-                </Link>
-                <div className="px-2 py-1">
-                  <input
-                    type="text"
-                    placeholder="البحث عن المنتجات..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  />
-                </div>
-              </nav>
-            </div>
-          )}
-        </div>
-      </header>
+      <Header
+        cartCount={cartCount}
+        mobileMenuOpen={mobileMenuOpen}
+        onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+        currentPage="/"
+      />
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
@@ -404,47 +351,34 @@ export default function Home() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {products.map((product) => (
-                <div
+                <ProductCard
                   key={product._id}
-                  className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow duration-200"
-                >
-                  <div className="relative h-64 bg-gray-200">
-                    {product.images && product.images.length > 0 ? (
-                      <Image
-                        src={product.images[0]}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <Package className="h-12 w-12 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <div className="flex items-center mb-2">
-                      <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
-                        {product.category.name}
-                      </span>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {product.name}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                      {product.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-gray-900">
-                        ${product.price.toFixed(2)}
-                      </span>
-                      <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors duration-200 flex items-center">
-                        <ShoppingCart className="h-4 w-4 mr-2" />
-                        أضف إلى السلة
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                  product={product}
+                  cartItems={cartItems}
+                  onAddToCart={addToCart}
+                  onUpdateQuantity={(product, quantity) => {
+                    // Update quantity in cart
+                    setCartItems((prevItems) => {
+                      const newItems = prevItems.map((item) =>
+                        item.product._id === product._id
+                          ? { ...item, quantity }
+                          : item
+                      );
+                      updateCartInStorage(newItems);
+                      return newItems;
+                    });
+                  }}
+                  onRemoveFromCart={(product) => {
+                    // Remove from cart
+                    setCartItems((prevItems) => {
+                      const newItems = prevItems.filter(
+                        (item) => item.product._id !== product._id
+                      );
+                      updateCartInStorage(newItems);
+                      return newItems;
+                    });
+                  }}
+                />
               ))}
             </div>
           )}
@@ -472,112 +406,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2 order-3 md:order-1">
-              <div className="flex items-center justify-end space-x-2 mb-4">
-                <span className="text-2xl font-bold">مكتبتي</span>
-                <BookOpen className="h-8 w-8 text-indigo-400" />
-              </div>
-              <p className="text-gray-400 mb-4 text-right">
-                شريكك الموثوق للوازم المدرسية عالية الجودة. نحن نوفر كل ما
-                يحتاجه الطلاب للنجاح الأكاديمي.
-              </p>
-              <div className="flex justify-end space-x-4">
-                <Link
-                  href="/admin/auth/login"
-                  className="text-indigo-400 hover:text-indigo-300"
-                >
-                  دخول المدير
-                </Link>
-              </div>
-            </div>
-
-            <div className="order-2 md:order-2">
-              <h3 className="text-lg font-semibold mb-4 text-right">
-                روابط سريعة
-              </h3>
-              <ul className="space-y-2">
-                <li className="text-right">
-                  <Link
-                    href="/products"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    المنتجات
-                  </Link>
-                </li>
-                <li className="text-right">
-                  <Link
-                    href="/categories"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    الفئات
-                  </Link>
-                </li>
-                <li className="text-right">
-                  <Link
-                    href="/about"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    من نحن
-                  </Link>
-                </li>
-                <li className="text-right">
-                  <Link
-                    href="/contact"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    اتصل بنا
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div className="order-1 md:order-3">
-              <h3 className="text-lg font-semibold mb-4 text-right">الفئات</h3>
-              <ul className="space-y-2">
-                <li className="text-right">
-                  <Link
-                    href="/categories/textbooks"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    الكتب المدرسية
-                  </Link>
-                </li>
-                <li className="text-right">
-                  <Link
-                    href="/categories/stationery"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    أدوات الكتابة
-                  </Link>
-                </li>
-                <li className="text-right">
-                  <Link
-                    href="/categories/art-supplies"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    لوازم الفنون
-                  </Link>
-                </li>
-                <li className="text-right">
-                  <Link
-                    href="/categories/calculators"
-                    className="text-gray-400 hover:text-white"
-                  >
-                    الحاسبات
-                  </Link>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 مكتبتي. جميع الحقوق محفوظة. بنيت بـ ❤️ للطلاب.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

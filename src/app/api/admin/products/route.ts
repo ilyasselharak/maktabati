@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   try {
     await dbConnect();
 
-    const { name, description, price, category, stock, images } =
+    const { name, description, price, category, stock, images, tags } =
       await request.json();
 
     // Validate required fields
@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
       category,
       stock: stock || 0,
       images,
+      tags: tags || [],
     });
 
     await newProduct.save();

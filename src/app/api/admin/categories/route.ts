@@ -1,23 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateRequest } from "../../../../lib/middleware/auth";
 import dbConnect from "../../../../lib/utils/database";
 import Category from "../../../../lib/models/Category";
 import Product from "../../../../lib/models/Product";
 
-export async function GET(request: NextRequest) {
-  const { user, response } = await authenticateRequest(request);
-
-  if (response) {
-    return response;
-  }
-
-  if (!user) {
-    return NextResponse.json(
-      { error: "Authentication required" },
-      { status: 401 }
-    );
-  }
-
+export async function GET() {
   try {
     await dbConnect();
 
@@ -37,19 +23,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const { user, response } = await authenticateRequest(request);
-
-  if (response) {
-    return response;
-  }
-
-  if (!user) {
-    return NextResponse.json(
-      { error: "Authentication required" },
-      { status: 401 }
-    );
-  }
-
   try {
     await dbConnect();
 
@@ -116,19 +89,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const { user, response } = await authenticateRequest(request);
-
-  if (response) {
-    return response;
-  }
-
-  if (!user) {
-    return NextResponse.json(
-      { error: "Authentication required" },
-      { status: 401 }
-    );
-  }
-
   try {
     await dbConnect();
 
@@ -199,19 +159,6 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const { user, response } = await authenticateRequest(request);
-
-  if (response) {
-    return response;
-  }
-
-  if (!user) {
-    return NextResponse.json(
-      { error: "Authentication required" },
-      { status: 401 }
-    );
-  }
-
   try {
     await dbConnect();
 

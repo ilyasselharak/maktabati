@@ -8,6 +8,7 @@ export interface IProduct extends Document {
   images: string[];
   stock: number;
   isActive: boolean;
+  tags: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,6 +52,13 @@ const ProductSchema: Schema = new Schema(
       type: Boolean,
       default: true,
     },
+    tags: [
+      {
+        type: String,
+        trim: true,
+        maxlength: 50,
+      },
+    ],
   },
   {
     timestamps: true,
@@ -60,6 +68,7 @@ const ProductSchema: Schema = new Schema(
 // Add indexes for better performance
 ProductSchema.index({ category: 1 });
 ProductSchema.index({ name: "text", description: "text" });
+ProductSchema.index({ tags: 1 });
 
 export default mongoose.models.Product ||
   mongoose.model<IProduct>("Product", ProductSchema);

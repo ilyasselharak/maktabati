@@ -14,6 +14,7 @@ import {
   PlusCircle,
   List,
   Tag,
+  ShoppingCart,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -63,6 +64,18 @@ const menuItems = [
         name: "إدارة الفئات",
         href: "/admin/dashboard/categories/manage",
         icon: Tag,
+      },
+    ],
+  },
+  {
+    name: "الطلبات",
+    href: "/admin/dashboard/orders",
+    icon: ShoppingCart,
+    subItems: [
+      {
+        name: "جميع الطلبات",
+        href: "/admin/dashboard/orders",
+        icon: List,
       },
     ],
   },

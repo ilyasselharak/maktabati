@@ -3,6 +3,7 @@ import { authenticateRequest } from "../../../../../lib/middleware/auth";
 import dbConnect from "../../../../../lib/utils/database";
 import Product from "../../../../../lib/models/Product";
 import Category from "../../../../../lib/models/Category";
+import Order from "../../../../../lib/models/Order";
 
 export async function GET(request: NextRequest) {
   const { user, response } = await authenticateRequest(request);
@@ -27,10 +28,18 @@ export async function GET(request: NextRequest) {
     // Get total categories count
     const totalCategories = await Category.countDocuments();
 
-    // For now, return placeholder values for revenue and orders
-    // In a real application, you would have Order/OrderItem models
-    const totalRevenue = 0;
-    const totalOrders = 0;
+    // Get real order statistics
+    const totalOrders = await Order.countDocuments();
+    const totalRevenueResult = await Order.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$totalAmount" },
+        },
+      },
+    ]);
+    const totalRevenue =
+      totalRevenueResult.length > 0 ? totalRevenueResult[0].total : 0;
 
     return NextResponse.json({
       totalProducts,

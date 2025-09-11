@@ -24,6 +24,7 @@ interface Product {
   };
   stock: number;
   isActive: boolean;
+  tags: string[];
 }
 
 export default function EditProductPage() {
@@ -42,6 +43,7 @@ export default function EditProductPage() {
   const [categoryId, setCategoryId] = useState("");
   const [stock, setStock] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [tags, setTags] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -72,6 +74,7 @@ export default function EditProductPage() {
         setCategoryId(prod.category._id);
         setStock(prod.stock.toString());
         setIsActive(prod.isActive);
+        setTags(prod.tags ? prod.tags.join(", ") : "");
         setImages(prod.images || []);
       } else if (response.status === 401) {
         router.push("/admin/auth/login");
@@ -195,6 +198,12 @@ export default function EditProductPage() {
           stock: Number(stock),
           isActive,
           images: allImages,
+          tags: tags
+            ? tags
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter((tag) => tag.length > 0)
+            : [],
         }),
       });
 
@@ -411,6 +420,27 @@ export default function EditProductPage() {
                       <span className="mr-2 text-sm text-gray-700">نشط</span>
                     </label>
                   </div>
+                </div>
+
+                {/* Tags */}
+                <div className="sm:col-span-2">
+                  <label
+                    htmlFor="tags"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    العلامات (Tags)
+                  </label>
+                  <input
+                    type="text"
+                    id="tags"
+                    value={tags}
+                    onChange={(e) => setTags(e.target.value)}
+                    className="mt-1 block w-full text-black border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="مدرسة، رياضيات، كتب، تعليم (افصل بين العلامات بفاصلة)"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    اكتب العلامات مفصولة بفواصل لتسهيل البحث عن المنتج
+                  </p>
                 </div>
               </div>
 

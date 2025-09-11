@@ -34,6 +34,7 @@ export default function AddProductPage() {
     price: "",
     category: "",
     stock: "",
+    tags: "",
   });
 
   useEffect(() => {
@@ -169,6 +170,12 @@ export default function AddProductPage() {
           price: parseFloat(formData.price),
           stock: parseInt(formData.stock),
           images: imageUrls,
+          tags: formData.tags
+            ? formData.tags
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter((tag) => tag.length > 0)
+            : [],
         }),
       });
 
@@ -340,6 +347,28 @@ export default function AddProductPage() {
                     placeholder="100"
                   />
                 </div>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label
+                  htmlFor="tags"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  العلامات (Tags)
+                </label>
+                <input
+                  type="text"
+                  id="tags"
+                  name="tags"
+                  value={formData.tags}
+                  onChange={handleChange}
+                  className="mt-1 block w-full text-black border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="مدرسة، رياضيات، كتب، تعليم (افصل بين العلامات بفاصلة)"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  اكتب العلامات مفصولة بفواصل لتسهيل البحث عن المنتج
+                </p>
               </div>
 
               {/* Image Upload */}

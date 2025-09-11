@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Image from "next/image";
-import Link from "next/link";
+import React, { useState, useEffect, useCallback } from "react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import {
   Search,
   ChevronDown,
   ChevronRight,
-  ShoppingCart,
   Package,
   Grid,
   List,
   SlidersHorizontal,
   X,
 } from "lucide-react";
+import ProductCard from "@/components/ProductCard";
 
 interface Product {
   _id: string;
@@ -27,6 +27,12 @@ interface Product {
   images: string[];
   stock: number;
   isActive: boolean;
+  tags?: string[];
+}
+
+interface CartItem {
+  product: Product;
+  quantity: number;
 }
 
 interface Category {
@@ -56,8 +62,35 @@ export default function ProductsPage() {
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]); // Used in useEffect and addToCart
+  const [cartCount, setCartCount] = useState(0);
 
-  const fetchProducts = async () => {
+  // Load cart and settings from localStorage on component mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem("maktabati_cart");
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart);
+        setCartItems(parsedCart);
+        const totalCount = parsedCart.reduce(
+          (total: number, item: CartItem) => total + item.quantity,
+          0
+        );
+        setCartCount(totalCount);
+      } catch (error) {
+        console.error("Error loading cart from localStorage:", error);
+      }
+    }
+  }, []);
+
+  const updateCartInStorage = (items: CartItem[]) => {
+    localStorage.setItem("maktabati_cart", JSON.stringify(items));
+    const totalCount = items.reduce((total, item) => total + item.quantity, 0);
+    setCartCount(totalCount);
+  };
+
+  const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -82,7 +115,15 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    currentPage,
+    searchTerm,
+    selectedCategory,
+    sortBy,
+    sortOrder,
+    minPrice,
+    maxPrice,
+  ]);
 
   const fetchCategories = async () => {
     try {
@@ -110,6 +151,7 @@ export default function ProductsPage() {
     sortOrder,
     minPrice,
     maxPrice,
+    fetchProducts,
   ]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -128,148 +170,51 @@ export default function ProductsPage() {
     setCurrentPage(1);
   };
 
-  const ProductCard = ({ product }: { product: Product }) => (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-200 group product-card">
-      <div className="relative h-64 bg-gray-200">
-        {product.images && product.images.length > 0 ? (
-          <Image
-            src={product.images[0]}
-            alt={product.name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-200"
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <Package className="h-12 w-12 text-gray-400" />
-          </div>
-        )}
+  const addToCart = (product: Product) => {
+    if (product.stock === 0) return;
 
-        {product.stock === 0 && (
-          <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
-            نفد المخزون
-          </div>
-        )}
+    setCartItems((prevItems) => {
+      const existingItem = prevItems.find(
+        (item) => item.product._id === product._id
+      );
 
-        {product.stock > 0 && product.stock <= 5 && (
-          <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs">
-            كمية محدودة
-          </div>
-        )}
-      </div>
+      let newItems;
+      if (existingItem) {
+        // Increase quantity if item already exists
+        newItems = prevItems.map((item) =>
+          item.product._id === product._id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      } else {
+        // Add new item to cart
+        newItems = [...prevItems, { product, quantity: 1 }];
+      }
 
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
-            {product.category.name}
-          </span>
-          <span className="text-xs text-gray-500">
-            المخزون: {product.stock}
-          </span>
-        </div>
+      // Update localStorage and cart count
+      updateCartInStorage(newItems);
 
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
-          {product.name}
-        </h3>
+      return newItems;
+    });
 
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-          {product.description}
-        </p>
-
-        <div className="flex items-center justify-between">
-          <span className="text-2xl font-bold text-gray-900">
-            ${product.price.toFixed(2)}
-          </span>
-          <button
-            className={`px-4 py-2 rounded-lg flex items-center transition-colors duration-200 ${
-              product.stock === 0
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-indigo-600 text-white hover:bg-indigo-700"
-            }`}
-            disabled={product.stock === 0}
-          >
-            <ShoppingCart className="h-4 w-4 ml-2" />
-            {product.stock === 0 ? "غير متوفر" : "أضف إلى السلة"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const ProductListItem = ({ product }: { product: Product }) => (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-200 group product-list-item">
-      <div className="flex">
-        <div className="relative w-48 h-48 bg-gray-200 flex-shrink-0">
-          {product.images && product.images.length > 0 ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-200"
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <Package className="h-8 w-8 text-gray-400" />
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
-                  {product.category.name}
-                </span>
-                <span className="text-xs text-gray-500">
-                  المخزون: {product.stock}
-                </span>
-              </div>
-
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {product.name}
-              </h3>
-
-              <p className="text-gray-600 mb-4 line-clamp-3">
-                {product.description}
-              </p>
-            </div>
-
-            <div className="text-left ml-4">
-              <span className="text-3xl font-bold text-gray-900 block mb-4">
-                ${product.price.toFixed(2)}
-              </span>
-              <button
-                className={`px-6 py-3 rounded-lg flex items-center transition-colors duration-200 ${
-                  product.stock === 0
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700"
-                }`}
-                disabled={product.stock === 0}
-              >
-                <ShoppingCart className="h-5 w-5 ml-2" />
-                {product.stock === 0 ? "غير متوفر" : "أضف إلى السلة"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    // Show success feedback (you could add a toast notification here)
+    console.log(`تم إضافة ${product.name} إلى السلة`);
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 products-page">
-      {/* Header */}
-      <div className="bg-white shadow-sm">
+    <div className="min-h-screen bg-white" dir="rtl">
+      {/* Site Header */}
+      <Header
+        cartCount={cartCount}
+        mobileMenuOpen={mobileMenuOpen}
+        onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+        currentPage="/products"
+      />
+
+      {/* Page Header */}
+      <div className="bg-gray-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                جميع المنتجات
-              </h1>
-              <p className="text-gray-600">
-                اكتشف مجموعتنا الكاملة من لوازم المدرسة
-              </p>
-            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setViewMode("grid")}
@@ -292,17 +237,25 @@ export default function ProductsPage() {
                 <List className="h-5 w-5" />
               </button>
             </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                جميع المنتجات
+              </h1>
+              <p className="text-gray-600">
+                اكتشف مجموعتنا الكاملة من لوازم المدرسة
+              </p>
+            </div>
           </div>
 
           {/* Search and Filters */}
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <form onSubmit={handleSearch} className="flex-1">
               <div className="relative">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="البحث عن المنتجات..."
+                  placeholder="البحث في الاسم أو العلامات أو الوصف..."
                   className="w-full pl-10 pr-4 py-3 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
                 <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
@@ -314,10 +267,10 @@ export default function ProductsPage() {
                 onClick={() => setShowFilters(!showFilters)}
                 className="flex items-center gap-2 px-4 py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                <SlidersHorizontal className="h-5 w-5" />
-                <span>الفلاتر</span>
+                <SlidersHorizontal className="h-5 w-5 text-black" />
+                <span className="text-black">الفلاتر</span>
                 <ChevronDown
-                  className={`h-4 w-4 transition-transform ${
+                  className={`h-4 w-4 text-black transition-transform ${
                     showFilters ? "rotate-180" : ""
                   }`}
                 />
@@ -348,7 +301,10 @@ export default function ProductsPage() {
                   </label>
                   <select
                     value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedCategory(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="w-full p-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   >
                     <option value="all">جميع الفئات</option>
@@ -366,7 +322,10 @@ export default function ProductsPage() {
                   </label>
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
+                    onChange={(e) => {
+                      setSortBy(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="w-full p-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   >
                     <option value="createdAt">التاريخ</option>
@@ -382,7 +341,10 @@ export default function ProductsPage() {
                   <input
                     type="number"
                     value={minPrice}
-                    onChange={(e) => setMinPrice(e.target.value)}
+                    onChange={(e) => {
+                      setMinPrice(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     placeholder="0"
                     className="w-full p-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
@@ -395,7 +357,10 @@ export default function ProductsPage() {
                   <input
                     type="number"
                     value={maxPrice}
-                    onChange={(e) => setMaxPrice(e.target.value)}
+                    onChange={(e) => {
+                      setMaxPrice(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     placeholder="1000"
                     className="w-full p-2 text-black border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
@@ -412,7 +377,7 @@ export default function ProductsPage() {
           <div
             className={`grid gap-6 ${
               viewMode === "grid"
-                ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 : "grid-cols-1"
             }`}
           >
@@ -443,47 +408,75 @@ export default function ProductsPage() {
             <div
               className={`grid gap-6 ${
                 viewMode === "grid"
-                  ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                   : "grid-cols-1"
               }`}
             >
-              {products.map((product) =>
-                viewMode === "grid" ? (
-                  <ProductCard key={product._id} product={product} />
-                ) : (
-                  <ProductListItem key={product._id} product={product} />
-                )
-              )}
+              {products.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                  cartItems={cartItems}
+                  onAddToCart={addToCart}
+                  onUpdateQuantity={(product, quantity) => {
+                    // Update quantity in cart
+                    setCartItems((prevItems) => {
+                      const newItems = prevItems.map((item) =>
+                        item.product._id === product._id
+                          ? { ...item, quantity }
+                          : item
+                      );
+                      updateCartInStorage(newItems);
+                      return newItems;
+                    });
+                  }}
+                  onRemoveFromCart={(product) => {
+                    // Remove from cart
+                    setCartItems((prevItems) => {
+                      const newItems = prevItems.filter(
+                        (item) => item.product._id !== product._id
+                      );
+                      updateCartInStorage(newItems);
+                      return newItems;
+                    });
+                  }}
+                  className={
+                    viewMode === "list"
+                      ? "flex flex-col sm:flex-row max-w-none"
+                      : ""
+                  }
+                />
+              ))}
             </div>
 
             {/* Pagination */}
             {pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-8 pagination">
-                <div className="text-sm text-gray-700">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-8 pagination gap-4">
+                <div className="text-sm text-gray-700 text-center sm:text-left">
                   عرض {products.length} من أصل {pagination.totalProducts} منتج
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <button
                     onClick={() => setCurrentPage(currentPage - 1)}
                     disabled={!pagination.hasPrev}
-                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
-                    <ChevronRight className="h-4 w-4" />
-                    السابق
+                    <ChevronRight className="h-4 w-4 text-black" />
+                    <span className="hidden sm:inline text-black">السابق</span>
                   </button>
 
-                  <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-medium">
+                  <span className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm">
                     {pagination.currentPage} من {pagination.totalPages}
                   </span>
 
                   <button
                     onClick={() => setCurrentPage(currentPage + 1)}
                     disabled={!pagination.hasNext}
-                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
-                    التالي
-                    <ChevronRight className="h-4 w-4 rotate-180" />
+                    <span className="hidden sm:inline text-black">التالي</span>
+                    <ChevronRight className="h-4 w-4 rotate-180 text-black" />
                   </button>
                 </div>
               </div>
@@ -491,6 +484,9 @@ export default function ProductsPage() {
           </>
         )}
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

@@ -26,6 +26,7 @@ interface Product {
   };
   stock: number;
   isActive: boolean;
+  tags: string[];
   createdAt: string;
 }
 
