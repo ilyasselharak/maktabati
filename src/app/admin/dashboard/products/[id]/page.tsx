@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -40,13 +40,7 @@ export default function ViewProductPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchProduct();
-    }
-  }, [params.id]);
-
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     try {
       const token = localStorage.getItem("adminToken");
       const response = await fetch(`/api/admin/products/${params.id}`, {
@@ -68,7 +62,13 @@ export default function ViewProductPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params.id, router]);
+
+  useEffect(() => {
+    if (params.id) {
+      fetchProduct();
+    }
+  }, [params.id, fetchProduct]);
 
   const handleDeleteProduct = async () => {
     if (

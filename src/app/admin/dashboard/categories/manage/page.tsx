@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import DashboardLayout from "../../components/DashboardLayout";
 import {
@@ -71,7 +71,7 @@ export default function ManageCategoriesPage() {
     }
   };
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       // You would typically have a separate API endpoint for stats
       // For now, we'll calculate basic stats from categories
@@ -87,7 +87,7 @@ export default function ManageCategoriesPage() {
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
-  };
+  }, [categories]);
 
   useEffect(() => {
     fetchCategories();
@@ -97,7 +97,7 @@ export default function ManageCategoriesPage() {
     if (categories.length > 0) {
       fetchStats();
     }
-  }, [categories]);
+  }, [categories, fetchStats]);
 
   const filteredCategories = categories.filter(
     (category) =>

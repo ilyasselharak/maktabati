@@ -5,9 +5,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
   Search,
-  ChevronDown,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Package,
   Grid,
   List,
@@ -64,7 +64,7 @@ export default function ProductsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]); // Used in useEffect and addToCart
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartCount, setCartCount] = useState(0);
 
   // New state for modern design
@@ -308,13 +308,13 @@ export default function ProductsPage() {
                 onClick={() => scrollCategories("left")}
                 className="p-3 rounded-full bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-md hover:shadow-lg"
               >
-                <ChevronRight className="h-6 w-6 text-gray-700" />
+                <ChevronLeft className="h-6 w-6 text-gray-700" />
               </button>
               <button
                 onClick={() => scrollCategories("right")}
                 className="p-3 rounded-full bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-md hover:shadow-lg"
               >
-                <ChevronLeft className="h-6 w-6 text-gray-700" />
+                <ChevronRight className="h-6 w-6 text-gray-700" />
               </button>
             </div>
           </div>
@@ -351,7 +351,6 @@ export default function ProductsPage() {
                       : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-700 hover:from-gray-100 hover:to-gray-200 hover:scale-105 border-gray-200 hover:border-indigo-200"
                   }`}
                 >
-                  
                   <span className="text-sm font-semibold text-center leading-tight px-1">
                     {category.name}
                   </span>

@@ -41,7 +41,7 @@ export default function DashboardLayout({
           localStorage.removeItem("adminToken");
           router.push("/admin/auth/login");
         }
-      } catch (error) {
+      } catch {
         localStorage.removeItem("adminToken");
         router.push("/admin/auth/login");
       } finally {

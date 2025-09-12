@@ -21,7 +21,7 @@ interface Category {
 export default function AddProductPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [images, setImages] = useState<File[]>([]);
+  const [, setImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -188,7 +188,7 @@ export default function AddProductPage() {
         const data = await response.json();
         setError(data.error || "فشل في إنشاء المنتج");
       }
-    } catch (error) {
+    } catch {
       setError("خطأ في الشبكة. يرجى المحاولة مرة أخرى.");
     } finally {
       setIsLoading(false);

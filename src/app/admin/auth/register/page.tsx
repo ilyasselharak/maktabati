@@ -49,7 +49,7 @@ export default function AdminRegisterPage() {
       } else {
         setError(data.error || "فشل التسجيل");
       }
-    } catch (_error) {
+    } catch {
       setError("خطأ في الشبكة. يرجى المحاولة مرة أخرى.");
     } finally {
       setIsLoading(false);
