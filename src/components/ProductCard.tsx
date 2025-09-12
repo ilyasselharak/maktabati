@@ -160,11 +160,11 @@ export default function ProductCard({
                   </span>
                 </div>
 
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2 h-16 flex items-start">
                   {product.name}
                 </h3>
 
-                <p className="text-gray-600 mb-4 line-clamp-3">
+                <p className="text-gray-600 mb-4 line-clamp-3 h-16 flex items-start">
                   {product.description}
                 </p>
 
@@ -331,12 +331,12 @@ export default function ProductCard({
         </div>
 
         {/* Product Name */}
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 h-14 flex items-start">
           {product.name}
         </h3>
 
         {/* Product Description */}
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2 h-10 flex items-start">
           {product.description}
         </p>
 
