@@ -340,3 +340,72 @@ select.text-gray-700 {
   margin-left: 0;
   margin-right: 0.5rem;
 }
+
+/* Modern scrollbar hiding utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* RTL Category Slider Enhancements */
+[dir="rtl"] .category-slider .flex.gap-8 > * + * {
+  margin-left: 0;
+  margin-right: 2rem;
+}
+
+/* Enhanced category circles for RTL */
+[dir="rtl"] .category-circle {
+  font-family: var(--font-amiri), 'Amiri', serif;
+  text-align: center;
+  line-height: 1.2;
+  direction: rtl;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+/* Better spacing for large category circles in RTL */
+[dir="rtl"] .category-slider {
+  direction: rtl;
+}
+
+[dir="rtl"] .category-slider .flex {
+  direction: rtl;
+}
+
+/* Modern animations and transitions */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+/* Enhanced focus styles for accessibility */
+.focus-ring:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* Smooth gradient animations */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
