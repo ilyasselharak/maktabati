@@ -36,11 +36,11 @@ export default function Footer() {
             {/* Contact Info */}
             <div className="space-y-3 mb-6">
               <div className="flex items-center justify-end space-x-3 text-gray-400">
-                <span className="text-sm">الرباط، المغرب</span>
+                <span className="text-sm">وزان، المغرب</span>
                 <MapPin className="h-4 w-4 text-indigo-400" />
               </div>
               <div className="flex items-center justify-end space-x-3 text-gray-400">
-                <span className="text-sm">+212 6XX XXX XXX</span>
+                <span className="text-sm"> 0629504107 </span>
                 <Phone className="h-4 w-4 text-indigo-400" />
               </div>
               <div className="flex items-center justify-end space-x-3 text-gray-400">

@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import {
   BookOpen,
   Calculator,
@@ -41,67 +39,51 @@ interface CartItem {
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
   useEffect(() => {
     fetchFeaturedProducts();
   }, []);
 
-  useEffect(() => {
-    // Load cart from localStorage on component mount
+  const addToCart = (product: Product) => {
+    if (product.stock === 0) return;
+
+    // Get current cart from localStorage
     const savedCart = localStorage.getItem("maktabati_cart");
+    let cartItems: CartItem[] = [];
+    
     if (savedCart) {
       try {
-        const parsedCart = JSON.parse(savedCart);
-        setCartItems(parsedCart);
-        const totalCount = parsedCart.reduce(
-          (total: number, item: { quantity: number }) => total + item.quantity,
-          0
-        );
-        setCartCount(totalCount);
+        cartItems = JSON.parse(savedCart);
       } catch (error) {
         console.error("Error loading cart from localStorage:", error);
       }
     }
-  }, []);
 
-  const updateCartInStorage = (items: CartItem[]) => {
-    localStorage.setItem("maktabati_cart", JSON.stringify(items));
-    const totalCount = items.reduce((total, item) => total + item.quantity, 0);
-    setCartCount(totalCount);
-  };
+    const existingItem = cartItems.find(
+      (item) => item.product._id === product._id
+    );
 
-  const addToCart = (product: Product) => {
-    if (product.stock === 0) return;
-
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find(
-        (item) => item.product._id === product._id
+    let newItems;
+    if (existingItem) {
+      // Update quantity if item already exists
+      newItems = cartItems.map((item) =>
+        item.product._id === product._id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
       );
+    } else {
+      // Add new item to cart
+      newItems = [...cartItems, { product, quantity: 1 }];
+    }
 
-      let newItems;
-      if (existingItem) {
-        // Update quantity if item already exists
-        newItems = prevItems.map((item) =>
-          item.product._id === product._id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        // Add new item to cart
-        newItems = [...prevItems, { product, quantity: 1 }];
-      }
-
-      // Update localStorage and cart count
-      updateCartInStorage(newItems);
-
-      return newItems;
-    });
+    // Update localStorage
+    localStorage.setItem("maktabati_cart", JSON.stringify(newItems));
 
     // Show success feedback
     console.log(`تم إضافة ${product.name} إلى السلة`);
+    
+    // Trigger a custom event to notify the header of cart update
+    window.dispatchEvent(new CustomEvent('cartUpdated'));
   };
 
   const fetchFeaturedProducts = async () => {
@@ -177,15 +159,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-white" dir="rtl">
-      {/* Header */}
-      <Header
-        cartCount={cartCount}
-        mobileMenuOpen={mobileMenuOpen}
-        onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
-        currentPage="/"
-      />
-
+    <div className="bg-white" dir="rtl">
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -354,29 +328,15 @@ export default function Home() {
                 <ProductCard
                   key={product._id}
                   product={product}
-                  cartItems={cartItems}
+                  cartItems={[]}
                   onAddToCart={addToCart}
                   onUpdateQuantity={(product, quantity) => {
-                    // Update quantity in cart
-                    setCartItems((prevItems) => {
-                      const newItems = prevItems.map((item) =>
-                        item.product._id === product._id
-                          ? { ...item, quantity }
-                          : item
-                      );
-                      updateCartInStorage(newItems);
-                      return newItems;
-                    });
+                    // Handle quantity update if needed
+                    console.log(`Update ${product.name} quantity to ${quantity}`);
                   }}
                   onRemoveFromCart={(product) => {
-                    // Remove from cart
-                    setCartItems((prevItems) => {
-                      const newItems = prevItems.filter(
-                        (item) => item.product._id !== product._id
-                      );
-                      updateCartInStorage(newItems);
-                      return newItems;
-                    });
+                    // Handle remove from cart if needed
+                    console.log(`Remove ${product.name} from cart`);
                   }}
                 />
               ))}
@@ -404,9 +364,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

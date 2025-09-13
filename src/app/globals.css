@@ -478,3 +478,127 @@ select.text-gray-700 {
   background-size: 200% 200%;
   animation: gradientShift 3s ease infinite;
 }
+
+/* Mobile Filter Modal Animations */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.mobile-modal-enter {
+  animation: slideUp 0.3s ease-out;
+}
+
+.mobile-modal-exit {
+  animation: slideDown 0.3s ease-in;
+}
+
+/* Mobile responsive improvements */
+@media (max-width: 1024px) {
+  .mobile-modal-panel {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+}
+
+/* Enhanced mobile filter modal */
+.mobile-filter-modal {
+  backdrop-filter: blur(4px);
+}
+
+.mobile-filter-modal .modal-panel {
+  border-radius: 1rem 1rem 0 0;
+  box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Mobile modal fixes */
+.mobile-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.mobile-modal-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.mobile-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 28rem;
+  background: white;
+  border-radius: 1rem 1rem 0 0;
+  max-height: 80vh;
+  overflow-y: auto;
+  transform: translateY(0);
+  transition: transform 0.3s ease-out;
+}
+
+/* Ensure modal appears above everything */
+.mobile-modal-z-50 {
+  z-index: 50;
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 1024px) {
+  .mobile-modal-content {
+    border-radius: 1rem 1rem 0 0;
+    box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* Mobile product grid adjustments */
+@media (max-width: 640px) {
+  .mobile-product-grid {
+    gap: 0.75rem; /* Reduce gap on mobile */
+  }
+  
+  .mobile-product-card {
+    min-height: 200px; /* Ensure consistent height */
+  }
+  
+  .mobile-product-card .product-image {
+    height: 120px; /* Smaller image on mobile */
+  }
+  
+  .mobile-product-card .product-content {
+    padding: 0.75rem; /* Reduce padding on mobile */
+  }
+  
+  .mobile-product-card .product-title {
+    font-size: 0.875rem; /* Smaller title on mobile */
+    line-height: 1.25;
+  }
+  
+  .mobile-product-card .product-price {
+    font-size: 1rem; /* Smaller price on mobile */
+  }
+}

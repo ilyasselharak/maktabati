@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next"
 import { Geist, Geist_Mono, Amiri, Tajawal } from "next/font/google";
 import "./globals.css";
+import HeaderWrapper from "@/components/HeaderWrapper";
+import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,7 +43,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} ${tajawal.variable} antialiased font-tajawal`}
       >
-        {children}
+        <HeaderWrapper />
+        <main className="min-h-screen">
+          {children}
+        </main>
+        <Footer />
         <Analytics />
       </body>
     </html>

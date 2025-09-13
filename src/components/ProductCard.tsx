@@ -32,6 +32,7 @@ interface ProductCardProps {
   onUpdateQuantity?: (product: Product, quantity: number) => void;
   onRemoveFromCart?: (product: Product) => void;
   className?: string;
+  compact?: boolean;
 }
 
 export default function ProductCard({
@@ -41,6 +42,7 @@ export default function ProductCard({
   onUpdateQuantity,
   onRemoveFromCart,
   className = "",
+  compact = false,
 }: ProductCardProps) {
   const router = useRouter();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -284,7 +286,7 @@ export default function ProductCard({
       onClick={handleCardClick}
       className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-200 group cursor-pointer border border-gray-200 ${className}`}
     >
-      <div className="relative h-64 bg-gray-200">
+      <div className={`relative bg-gray-200 product-image ${compact ? 'h-32' : 'h-64'}`}>
         {product.images && product.images.length > 0 ? (
           <Image
             src={product.images[0]}
@@ -294,7 +296,7 @@ export default function ProductCard({
           />
         ) : (
           <div className="flex items-center justify-center h-full">
-            <Package className="h-12 w-12 text-gray-400" />
+            <Package className={`text-gray-400 ${compact ? 'h-8 w-8' : 'h-12 w-12'}`} />
           </div>
         )}
 
@@ -319,29 +321,33 @@ export default function ProductCard({
         )}
       </div>
 
-      <div className="p-6">
+      <div className={`product-content ${compact ? 'p-3' : 'p-6'}`}>
         {/* Category Badge */}
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
+          <span className={`bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full ${compact ? 'text-xs' : 'text-xs'}`}>
             {product.category.name}
           </span>
-          <span className="text-xs text-gray-500">
-            المخزون: {product.stock}
-          </span>
+          {!compact && (
+            <span className="text-xs text-gray-500">
+              المخزون: {product.stock}
+            </span>
+          )}
         </div>
 
         {/* Product Name */}
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 h-14 flex items-start">
+        <h3 className={`font-semibold text-gray-900 mb-2 line-clamp-2 flex items-start product-title ${compact ? 'text-sm h-8' : 'text-lg h-14'}`}>
           {product.name}
         </h3>
 
-        {/* Product Description */}
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2 h-10 flex items-start">
-          {product.description}
-        </p>
+        {/* Product Description - only show in non-compact mode */}
+        {!compact && (
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2 h-10 flex items-start">
+            {product.description}
+          </p>
+        )}
 
-        {/* Tags (if available) */}
-        {product.tags && product.tags.length > 0 && (
+        {/* Tags (if available) - only show in non-compact mode */}
+        {!compact && product.tags && product.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {product.tags.slice(0, 3).map((tag, index) => (
               <span
@@ -361,43 +367,43 @@ export default function ProductCard({
 
         {/* Price and Cart Controls */}
         <div className="flex items-center justify-between">
-          <span className="text-2xl font-bold text-gray-900">
+          <span className={`font-bold text-gray-900 product-price ${compact ? 'text-lg' : 'text-2xl'}`}>
             {formatPrice(product.price)} د.م.
           </span>
 
           {isInCart && currentQuantity > 0 ? (
             // Quantity controls when item is in cart
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {/* Remove button */}
               <button
                 onClick={removeFromCart}
-                className="p-1.5 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                className={`rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors ${compact ? 'p-1' : 'p-1.5'}`}
                 aria-label="إزالة من السلة"
                 title="إزالة من السلة"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
               </button>
 
               {/* Quantity controls */}
               <div className="flex items-center bg-gray-100 rounded-lg">
                 <button
                   onClick={() => updateQuantity(currentQuantity - 1)}
-                  className="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-l-lg transition-colors"
+                  className={`text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-l-lg transition-colors ${compact ? 'p-1' : 'p-1.5'}`}
                   disabled={currentQuantity <= 1}
                   aria-label="تقليل الكمية"
                 >
-                  <Minus className="h-3 w-3" />
+                  <Minus className={compact ? 'h-2 w-2' : 'h-3 w-3'} />
                 </button>
-                <span className="px-3 py-1 text-sm font-medium text-gray-900 min-w-[2rem] text-center">
+                <span className={`font-medium text-gray-900 min-w-[2rem] text-center ${compact ? 'px-2 py-1 text-xs' : 'px-3 py-1 text-sm'}`}>
                   {currentQuantity}
                 </span>
                 <button
                   onClick={() => updateQuantity(currentQuantity + 1)}
-                  className="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-r-lg transition-colors"
+                  className={`text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-r-lg transition-colors ${compact ? 'p-1' : 'p-1.5'}`}
                   disabled={currentQuantity >= product.stock}
                   aria-label="زيادة الكمية"
                 >
-                  <Plus className="h-3 w-3" />
+                  <Plus className={compact ? 'h-2 w-2' : 'h-3 w-3'} />
                 </button>
               </div>
             </div>
@@ -406,13 +412,13 @@ export default function ProductCard({
             <button
               onClick={handleAddToCart}
               disabled={product.stock === 0 || isAddingToCart}
-              className={`p-2 rounded-lg flex items-center justify-center transition-colors duration-200 ${
+              className={`rounded-lg flex items-center justify-center transition-colors duration-200 ${
                 product.stock === 0
                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                   : isAddingToCart
                   ? "bg-green-500 text-white cursor-not-allowed"
                   : "bg-indigo-600 text-white hover:bg-indigo-700"
-              }`}
+              } ${compact ? 'p-1.5' : 'p-2'}`}
               aria-label={
                 product.stock === 0
                   ? "غير متوفر"
@@ -431,7 +437,7 @@ export default function ProductCard({
               {isAddingToCart ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               ) : (
-                <ShoppingCart className="h-5 w-5" />
+                <ShoppingCart className={compact ? 'h-4 w-4' : 'h-5 w-5'} />
               )}
             </button>
           )}
@@ -439,7 +445,7 @@ export default function ProductCard({
 
         {/* Success Message */}
         {isAddingToCart && (
-          <div className="mt-2 text-xs text-green-600 text-center">
+          <div className={`text-green-600 text-center ${compact ? 'mt-1 text-xs' : 'mt-2 text-xs'}`}>
             تمت الإضافة بنجاح!
           </div>
         )}

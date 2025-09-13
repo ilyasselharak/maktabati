@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import {
   ShoppingCart,
   Minus,
@@ -36,7 +34,6 @@ interface CartItem {
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Load cart from localStorage on component mount
@@ -53,6 +50,8 @@ export default function CartPage() {
 
   const updateCartInStorage = (items: CartItem[]) => {
     localStorage.setItem("maktabati_cart", JSON.stringify(items));
+    // Trigger a custom event to notify the header of cart update
+    window.dispatchEvent(new CustomEvent('cartUpdated'));
   };
 
   const updateQuantity = (productId: string, newQuantity: number) => {
@@ -106,15 +105,7 @@ export default function CartPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
-      {/* Header */}
-      <Header
-        cartCount={cartItems.reduce((total, item) => total + item.quantity, 0)}
-        mobileMenuOpen={mobileMenuOpen}
-        onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
-        currentPage="/cart"
-      />
-
+    <div className="bg-gray-50" dir="rtl">
       {/* Cart Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
@@ -311,9 +302,6 @@ export default function CartPage() {
           </div>
         )}
       </div>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }
