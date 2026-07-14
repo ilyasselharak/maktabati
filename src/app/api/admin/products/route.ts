@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "../../../../lib/middleware/auth";
 import dbConnect from "../../../../lib/utils/database";
 import Product from "../../../../lib/models/Product";
+import { slugify } from "../../../../lib/utils/slugify";
 
 export async function GET(request: NextRequest) {
   const { user, response } = await authenticateRequest(request);
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     await dbConnect();
 
     const products = await Product.find()
-      .populate("category", "name")
+      .populate("category", "name slug")
       .sort({ createdAt: -1 });
 
     return NextResponse.json({
@@ -80,6 +81,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate unique slug
+    let baseSlug = slugify(name.trim());
+    if (!baseSlug) baseSlug = "product";
+    let finalSlug = baseSlug;
+    let suffix = 1;
+    while (await Product.findOne({ slug: finalSlug })) {
+      finalSlug = `${baseSlug}-${suffix}`;
+      suffix++;
+    }
+
     // Create new product
     const newProduct = new Product({
       name: name.trim(),
@@ -89,12 +100,13 @@ export async function POST(request: NextRequest) {
       stock: stock || 0,
       images,
       tags: tags || [],
+      slug: finalSlug,
     });
 
     await newProduct.save();
 
     // Populate category for response
-    await newProduct.populate("category", "name");
+    await newProduct.populate("category", "name slug");
 
     return NextResponse.json(
       {

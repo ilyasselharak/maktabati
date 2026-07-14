@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "../../../../lib/utils/database";
 import Category from "../../../../lib/models/Category";
 import Product from "../../../../lib/models/Product";
+import { slugify } from "../../../../lib/utils/slugify";
 
 export async function GET() {
   try {
@@ -9,9 +10,28 @@ export async function GET() {
 
     const categories = await Category.find().sort({ name: 1 });
 
+    // Auto-generate slugs for existing categories without one
+    const updatedCategories = [];
+    for (const cat of categories) {
+      if (!cat.slug) {
+        let newSlug = slugify(cat.name);
+        if (!newSlug) newSlug = "category";
+        // Check uniqueness
+        let suffix = 1;
+        const baseSlug = newSlug;
+        while (await Category.findOne({ slug: newSlug })) {
+          newSlug = `${baseSlug}-${suffix}`;
+          suffix++;
+        }
+        cat.slug = newSlug;
+        await cat.save();
+      }
+      updatedCategories.push(cat);
+    }
+
     return NextResponse.json({
-      categories,
-      total: categories.length,
+      categories: updatedCategories,
+      total: updatedCategories.length,
     });
   } catch (error) {
     console.error("Categories fetch error:", error);
@@ -48,9 +68,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Generate unique slug
+    let baseSlug = slugify(name.trim());
+    if (!baseSlug) baseSlug = "category";
+    let finalSlug = baseSlug;
+    let suffix = 1;
+    while (await Category.findOne({ slug: finalSlug })) {
+      finalSlug = `${baseSlug}-${suffix}`;
+      suffix++;
+    }
+
     // Create new category
     const newCategory = new Category({
       name: name.trim(),
+      slug: finalSlug,
       description: description?.trim(),
     });
 
@@ -122,6 +153,19 @@ export async function PUT(request: NextRequest) {
         { error: "Category with this name already exists" },
         { status: 409 }
       );
+    }
+
+    // Update slug if name changed
+    if (name.trim() !== existingCategory.name) {
+      let baseSlug = slugify(name.trim());
+      if (!baseSlug) baseSlug = "category";
+      let finalSlug = baseSlug;
+      let suffix = 1;
+      while (await Category.findOne({ _id: { $ne: id }, slug: finalSlug })) {
+        finalSlug = `${baseSlug}-${suffix}`;
+        suffix++;
+      }
+      existingCategory.slug = finalSlug;
     }
 
     // Update category

@@ -3,23 +3,104 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary: #a780f8;
+  --primary-light: #eee5ff;
+  --primary-dark: #5b21b6;
+  --accent: #f59e0b;
+  --surface: #f8fafc;
+  --surface-elevated: #ffffff;
+  --border-subtle: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
 }
 
-/* Line clamp utilities */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-light: var(--primary-light);
+  --color-primary-dark: var(--primary-dark);
+  --color-accent: var(--accent);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border-subtle: var(--border-subtle);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-amiri: var(--font-amiri);
+  --font-tajawal: var(--font-tajawal);
+
+  /* Override indigo palette with custom purple (#a780f8) */
+  --color-indigo-50: #f8f5ff;
+  --color-indigo-100: #eee5ff;
+  --color-indigo-200: #d9c0ff;
+  --color-indigo-300: #c4a0ff;
+  --color-indigo-400: #ae80ff;
+  --color-indigo-500: #a780f8;
+  --color-indigo-600: #6d28d9;
+  --color-indigo-700: #5b21b6;
+  --color-indigo-800: #4c1d95;
+  --color-indigo-900: #3b0764;
+  --color-indigo-950: #2d0550;
+}
+
+/* ── Base ── */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-tajawal), 'Tajawal', Arial, Helvetica, sans-serif;
+  line-height: 1.65;
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--primary-light);
+  color: var(--primary-dark);
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ── Line clamp utilities ── */
 .line-clamp-1 {
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
 }
-
 .line-clamp-2 {
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
-
 .line-clamp-3 {
   overflow: hidden;
   display: -webkit-box;
@@ -27,406 +108,65 @@
   -webkit-line-clamp: 3;
 }
 
-/* RTL-specific styles */
-[dir="rtl"] {
-  text-align: right;
-}
-
-[dir="rtl"] .rtl\:text-left {
-  text-align: left;
-}
-
-[dir="rtl"] .rtl\:text-right {
-  text-align: right;
-}
-
-/* Arabic text rendering improvements */
-body {
-  font-feature-settings: "liga" 1, "kern" 1;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* RTL flexbox utilities */
-[dir="rtl"] .rtl\:flex-row-reverse {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .rtl\:space-x-reverse > :not([hidden]) ~ :not([hidden]) {
-  --tw-space-x-reverse: 1;
-}
-
-/* RTL margin and padding utilities */
-[dir="rtl"] .rtl\:ml-auto {
-  margin-left: auto;
-}
-
-[dir="rtl"] .rtl\:mr-auto {
-  margin-right: auto;
-}
-
-[dir="rtl"] .rtl\:pl-4 {
-  padding-left: 1rem;
-}
-
-[dir="rtl"] .rtl\:pr-4 {
-  padding-right: 1rem;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-amiri: var(--font-amiri);
-  --font-tajawal: var(--font-tajawal);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-/* Arabic RTL Support */
+/* ── RTL Core ── */
 html[dir="rtl"] {
   direction: rtl;
 }
-
-html[dir="rtl"] body {
-  direction: rtl;
+[dir="rtl"] {
+  text-align: right;
+}
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select {
   text-align: right;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-tajawal), 'Tajawal', Arial, Helvetica, sans-serif;
-  line-height: 1.6;
+/* RTL spacing - space-x is physical so we flip it */
+[dir="rtl"] .space-x-1 > * + * { margin-left: 0; margin-right: 0.25rem; }
+[dir="rtl"] .space-x-2 > * + * { margin-left: 0; margin-right: 0.5rem; }
+[dir="rtl"] .space-x-3 > * + * { margin-left: 0; margin-right: 0.75rem; }
+[dir="rtl"] .space-x-4 > * + * { margin-left: 0; margin-right: 1rem; }
+[dir="rtl"] .space-x-6 > * + * { margin-left: 0; margin-right: 1.5rem; }
+[dir="rtl"] .space-x-8 > * + * { margin-left: 0; margin-right: 2rem; }
+[dir="rtl"] .space-x-12 > * + * { margin-left: 0; margin-right: 3rem; }
+
+/* NOTE: We intentionally do NOT flip left/right/margin/padding/border/rounded/flex.
+   Use Tailwind logical properties instead:
+   - start/end instead of left/right
+   - ms/me instead of ml/mr
+   - ps/pe instead of pl/pr
+   - border-s/border-e instead of border-l/border-r
+   - rounded-s/rounded-e instead of rounded-l/rounded-r
+   - gap-x instead of space-x
+   This avoids the confusing mental model where "left" means "right" in RTL. */
+
+/* ── Input text color ── */
+input, textarea, select {
+  color: #000000 !important;
+}
+input::placeholder, textarea::placeholder {
+  color: #6b7280 !important;
+}
+input:focus, textarea:focus, select:focus {
+  color: #000000 !important;
 }
 
-/* RTL specific adjustments */
-[dir="rtl"] .flex {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .space-x-4 > * + * {
-  margin-left: 0;
-  margin-right: 1rem;
-}
-
-[dir="rtl"] .space-x-8 > * + * {
-  margin-left: 0;
-  margin-right: 2rem;
-}
-
-/* Fix icons and buttons in RTL */
-[dir="rtl"] .mr-2 {
-  margin-right: 0;
-  margin-left: 0.5rem;
-}
-
-[dir="rtl"] .ml-2 {
-  margin-left: 0;
-  margin-right: 0.5rem;
-}
-
-/* Fix search icon position */
-[dir="rtl"] .absolute.left-3 {
-  left: auto;
-  right: 0.75rem;
-}
-
-/* Fix eye icon position in password fields */
-[dir="rtl"] .absolute.right-0 {
-  right: auto;
-  left: 0.75rem;
-}
-
-/* Fix close button position */
-[dir="rtl"] .absolute.-top-2.-right-2 {
-  right: auto;
-  left: -0.5rem;
-}
-
-/* Fix chevron icons */
-[dir="rtl"] .rotate-90 {
-  transform: rotate(-90deg);
-}
-
-/* Fix form inputs */
-[dir="rtl"] input, [dir="rtl"] textarea, [dir="rtl"] select {
-  text-align: right;
-}
-
-/* Fix padding in RTL */
-[dir="rtl"] .pl-10 {
-  padding-left: 0;
-  padding-right: 2.5rem;
-}
-
-[dir="rtl"] .pr-10 {
-  padding-right: 0;
-  padding-left: 2.5rem;
-}
-
-[dir="rtl"] .pl-3 {
-  padding-left: 0;
-  padding-right: 0.75rem;
-}
-
-[dir="rtl"] .pr-3 {
-  padding-right: 0;
-  padding-left: 0.75rem;
-}
-
-/* Arabic text improvements */
+/* ── Arabic text ── */
 .arabic-text {
   font-family: var(--font-amiri), 'Amiri', serif;
   line-height: 1.8;
 }
 
-/* Ensure proper spacing for Arabic text */
-[dir="rtl"] p, [dir="rtl"] div, [dir="rtl"] span {
-  text-align: right;
-}
-
-/* Footer RTL specific adjustments */
-[dir="rtl"] footer .flex.items-center.space-x-2 {
-  flex-direction: row-reverse;
-}
-
-/* Ensure footer text is right-aligned */
-[dir="rtl"] footer p, [dir="rtl"] footer li, [dir="rtl"] footer h3 {
-  text-align: right;
-}
-
-/* Fix footer link spacing */
-[dir="rtl"] footer .space-x-4 > * + * {
-  margin-left: 0;
-  margin-right: 1rem;
-}
-
-/* Products page RTL adjustments */
-[dir="rtl"] .products-page .flex.items-center.justify-between {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .products-page .flex.gap-2 {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .products-page .relative input {
-  text-align: right;
-  padding-left: 3rem;
-  padding-right: 1rem;
-}
-
-[dir="rtl"] .products-page .absolute.left-3 {
-  left: auto;
-  right: 0.75rem;
-}
-
-[dir="rtl"] .products-page .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
-  direction: rtl;
-}
-
-[dir="rtl"] .products-page .flex.items-center.justify-between .text-sm {
-  order: 2;
-}
-
-[dir="rtl"] .products-page .flex.items-center.justify-between .flex.items-center.gap-2 {
-  order: 1;
-}
-
-[dir="rtl"] .products-page .flex.items-center.gap-2 button:first-child {
-  order: 2;
-}
-
-[dir="rtl"] .products-page .flex.items-center.gap-2 span {
-  order: 1;
-}
-
-[dir="rtl"] .products-page .flex.items-center.gap-2 button:last-child {
-  order: 1;
-}
-
-/* Product card RTL adjustments */
-[dir="rtl"] .product-card .flex.items-center.justify-between {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .product-card .flex.items-center.mb-2 span:first-child {
-  order: 2;
-}
-
-[dir="rtl"] .product-card .flex.items-center.mb-2 span:last-child {
-  order: 1;
-}
-
-[dir="rtl"] .product-card .flex.items-center.justify-between .text-2xl {
-  order: 2;
-}
-
-[dir="rtl"] .product-card .flex.items-center.justify-between button {
-  order: 1;
-}
-
-[dir="rtl"] .product-card button .ml-2 {
-  margin-left: 0;
-  margin-right: 0.5rem;
-}
-
-/* Product list item RTL adjustments */
-[dir="rtl"] .product-list-item .flex {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .product-list-item .flex.items-start.justify-between {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .product-list-item .flex.items-center.gap-2 {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .product-list-item .text-left {
-  text-align: right;
-}
-
-[dir="rtl"] .product-list-item button .ml-2 {
-  margin-left: 0;
-  margin-right: 0.5rem;
-}
-
-/* Filters RTL adjustments */
-[dir="rtl"] .filters-panel .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-4 {
-  direction: rtl;
-}
-
-/* Pagination RTL adjustments */
-[dir="rtl"] .pagination .flex.items-center.gap-2 {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .pagination .flex.items-center.gap-2 button:first-child {
-  order: 2;
-}
-
-[dir="rtl"] .pagination .flex.items-center.gap-2 span {
-  order: 1;
-}
-
-[dir="rtl"] .pagination .flex.items-center.gap-2 button:last-child {
-  order: 1;
-}
-
-[dir="rtl"] .pagination button .rotate-180 {
-  transform: rotate(0deg);
-}
-
-[dir="rtl"] .pagination button:first-child svg {
-  transform: rotate(180deg);
-}
-
-/* Categories page RTL adjustments */
-[dir="rtl"] .categories-page .flex.items-center.justify-between {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .categories-page .grid.grid-cols-1.gap-6 {
-  direction: rtl;
-}
-
-[dir="rtl"] .categories-page .flex.items-start.justify-between {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .categories-page .flex.items-start.justify-between .flex-1 {
-  order: 2;
-}
-
-[dir="rtl"] .categories-page .flex.items-start.justify-between .flex.gap-2 {
-  order: 1;
-}
-
-[dir="rtl"] .categories-page .flex.gap-2 {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .categories-page .flex.justify-end.gap-3 {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .categories-page .flex.justify-center.gap-3 {
-  flex-direction: row-reverse;
-}
-
-/* Modal RTL adjustments */
-[dir="rtl"] .modal .flex.items-center.justify-between {
-  flex-direction: row-reverse;
-}
-
-[dir="rtl"] .modal .flex.items-center.justify-between h3 {
-  order: 2;
-}
-
-[dir="rtl"] .modal .flex.items-center.justify-between button {
-  order: 1;
-}
-
-/* Ensure all input elements have black text */
-input, textarea, select {
-  color: #000000 !important;
-}
-
-input::placeholder, textarea::placeholder {
-  color: #6b7280 !important; /* Gray placeholder text */
-}
-
-/* Ensure form inputs in dark contexts also have black text */
-input:focus, textarea:focus, select:focus {
-  color: #000000 !important;
-}
-
-/* Override any Tailwind classes that might set different text colors */
-input.text-gray-900,
-input.text-gray-800,
-input.text-gray-700,
-textarea.text-gray-900,
-textarea.text-gray-800,
-textarea.text-gray-700,
-select.text-gray-900,
-select.text-gray-800,
-select.text-gray-700 {
-  color: #000000 !important;
-}
-
-/* Fix footer logo and text spacing */
-[dir="rtl"] footer .flex.items-center.justify-end.space-x-2 > * + * {
-  margin-left: 0;
-  margin-right: 0.5rem;
-}
-
-/* Modern scrollbar hiding utility */
+/* ── Scrollbar hide utility ── */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* Internet Explorer 10+ */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Safari and Chrome */
+  display: none;
 }
 
-/* RTL Category Slider Enhancements */
-[dir="rtl"] .category-slider .flex.gap-8 > * + * {
-  margin-left: 0;
-  margin-right: 2rem;
-}
-
-/* Enhanced category circles for RTL */
+/* ── Category circle ── */
 [dir="rtl"] .category-circle {
   font-family: var(--font-amiri), 'Amiri', serif;
   text-align: center;
@@ -436,169 +176,179 @@ select.text-gray-700 {
   hyphens: auto;
 }
 
-/* Better spacing for large category circles in RTL */
-[dir="rtl"] .category-slider {
-  direction: rtl;
+/* ── Animations ── */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.scale-in {
+  animation: scaleIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-[dir="rtl"] .category-slider .flex {
-  direction: rtl;
+@keyframes scaleInSmall {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scaleInSmall 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Modern animations and transitions */
+@keyframes slideFromRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes slideToRight {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+.animate-slide-from-right {
+  animation: slideFromRight 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.animate-slide-to-right {
+  animation: slideToRight 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
 .fade-in-up {
-  animation: fadeInUp 0.6s ease-out;
+  animation: fadeInUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* Enhanced focus styles for accessibility */
-.focus-ring:focus {
-  outline: 2px solid #6366f1;
-  outline-offset: 2px;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
-/* Smooth gradient animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+.animate-float-delay {
+  animation: float 4s ease-in-out 1s infinite;
+}
+
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
-
 .animate-gradient {
   background-size: 200% 200%;
-  animation: gradientShift 3s ease infinite;
+  animation: gradientShift 5s ease infinite;
 }
 
-/* Mobile Filter Modal Animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.count-up {
+  animation: countUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 @keyframes slideUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
 }
-
 @keyframes slideDown {
-  from {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(100%);
-    opacity: 0;
-  }
+  from { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(100%); opacity: 0; }
+}
+.mobile-modal-enter { animation: slideUp 0.3s ease-out; }
+.mobile-modal-exit  { animation: slideDown 0.3s ease-in; }
+
+/* ── Glass morphism ── */
+.glass {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(1.4);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+.glass-dark {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
 }
 
-.mobile-modal-enter {
-  animation: slideUp 0.3s ease-out;
+/* ── Focus ring ── */
+.focus-ring:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
-.mobile-modal-exit {
-  animation: slideDown 0.3s ease-in;
+/* ── Hover lift ── */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.12);
 }
 
-/* Mobile responsive improvements */
+/* ── Card shadow ── */
+.card-shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+.card-shadow-hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Mobile modal ── */
 @media (max-width: 1024px) {
-  .mobile-modal-panel {
-    max-height: 80vh;
-    overflow-y: auto;
-  }
+  .mobile-modal-panel { max-height: 80vh; overflow-y: auto; }
 }
-
-/* Enhanced mobile filter modal */
-.mobile-filter-modal {
-  backdrop-filter: blur(4px);
-}
-
+.mobile-filter-modal { backdrop-filter: blur(4px); }
 .mobile-filter-modal .modal-panel {
   border-radius: 1rem 1rem 0 0;
   box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.1), 0 -10px 10px -5px rgba(0, 0, 0, 0.04);
 }
-
-/* Mobile modal fixes */
 .mobile-modal-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: flex-end; justify-content: center;
 }
-
 .mobile-modal-backdrop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  position: absolute; inset: 0;
   background-color: rgba(0, 0, 0, 0.5);
 }
-
 .mobile-modal-content {
-  position: relative;
-  width: 100%;
-  max-width: 28rem;
-  background: white;
-  border-radius: 1rem 1rem 0 0;
-  max-height: 80vh;
-  overflow-y: auto;
+  position: relative; width: 100%; max-width: 28rem;
+  background: white; border-radius: 1rem 1rem 0 0;
+  max-height: 80vh; overflow-y: auto;
   transform: translateY(0);
   transition: transform 0.3s ease-out;
 }
 
-/* Ensure modal appears above everything */
-.mobile-modal-z-50 {
-  z-index: 50;
-}
-
-/* Mobile specific adjustments */
-@media (max-width: 1024px) {
-  .mobile-modal-content {
-    border-radius: 1rem 1rem 0 0;
-    box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.1);
-  }
-}
-
-/* Mobile product grid adjustments */
+/* ── Mobile product grid ── */
 @media (max-width: 640px) {
-  .mobile-product-grid {
-    gap: 0.75rem; /* Reduce gap on mobile */
-  }
-  
-  .mobile-product-card {
-    min-height: 200px; /* Ensure consistent height */
-  }
-  
-  .mobile-product-card .product-image {
-    height: 120px; /* Smaller image on mobile */
-  }
-  
-  .mobile-product-card .product-content {
-    padding: 0.75rem; /* Reduce padding on mobile */
-  }
-  
-  .mobile-product-card .product-title {
-    font-size: 0.875rem; /* Smaller title on mobile */
-    line-height: 1.25;
-  }
-  
-  .mobile-product-card .product-price {
-    font-size: 1rem; /* Smaller price on mobile */
+  .mobile-product-grid { gap: 0.75rem; }
+  .mobile-product-card { min-height: 200px; }
+  .mobile-product-card .product-image { height: 120px; }
+  .mobile-product-card .product-content { padding: 0.75rem; }
+  .mobile-product-card .product-title { font-size: 0.875rem; line-height: 1.25; }
+  .mobile-product-card .product-price { font-size: 1rem; }
+}
+
+/* ── Dark mode support ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
   }
 }

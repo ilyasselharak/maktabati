@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
     // Get products with pagination
     const products = await Product.find(query)
-      .populate("category", "name")
+      .populate("category", "name slug")
       .sort(sort)
       .skip(skip)
       .limit(limit)

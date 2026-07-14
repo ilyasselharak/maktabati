@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ShoppingCart, Package, Plus, Minus, Trash2 } from "lucide-react";
+import {
+  ShoppingCart,
+  Package,
+  Plus,
+  Minus,
+  Trash2,
+  Eye,
+} from "lucide-react";
 
 interface Product {
   _id: string;
@@ -14,10 +21,12 @@ interface Product {
   category: {
     _id: string;
     name: string;
+    slug?: string;
   };
   stock: number;
   isActive: boolean;
   tags?: string[];
+  slug?: string;
 }
 
 interface CartItem {
@@ -46,30 +55,25 @@ export default function ProductCard({
 }: ProductCardProps) {
   const router = useRouter();
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Check if this is a list layout (flex layout)
   const isListLayout = className.includes("flex");
 
   const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent navigation if clicking on buttons or interactive elements
-    if ((e.target as HTMLElement).closest("button")) {
-      return;
-    }
-    router.push(`/products/${product._id}`);
+    if ((e.target as HTMLElement).closest("button")) return;
+    router.push(`/products/${product.slug || product._id}`);
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
+    if (product.stock === 0) return;
     setIsAddingToCart(true);
-
     onAddToCart(product);
-
-    setTimeout(() => setIsAddingToCart(false), 1000);
+    setTimeout(() => setIsAddingToCart(false), 800);
   };
 
-  const formatPrice = (price: number) => {
-    return price.toFixed(2);
-  };
+  const formatPrice = (price: number) => price.toFixed(2);
 
   const isInCart = cartItems.some((item) => item.product._id === product._id);
   const cartItem = cartItems.find((item) => item.product._id === product._id);
@@ -77,200 +81,152 @@ export default function ProductCard({
 
   const updateQuantity = (newQuantity: number) => {
     if (newQuantity <= 0) {
-      // Remove from cart
-      if (onRemoveFromCart) {
-        onRemoveFromCart(product);
-      } else {
-        // Fallback: just add the product (this will increase quantity, but we want to remove)
-        // For now, we'll just call onAddToCart which will handle the logic
-        onAddToCart(product);
-      }
+      if (onRemoveFromCart) onRemoveFromCart(product);
       return;
     }
-
-    if (newQuantity > product.stock) return; // Don't exceed stock
-
-    if (onUpdateQuantity) {
-      onUpdateQuantity(product, newQuantity);
-    } else {
-      // Fallback to adding (this might not be perfect, but it's a start)
-      onAddToCart(product);
-    }
+    if (newQuantity > product.stock) return;
+    if (onUpdateQuantity) onUpdateQuantity(product, newQuantity);
   };
 
   const removeFromCart = () => {
-    if (onRemoveFromCart) {
-      onRemoveFromCart(product);
-    } else {
-      // Fallback behavior - this won't work perfectly without proper remove function
-      onAddToCart(product);
-    }
+    if (onRemoveFromCart) onRemoveFromCart(product);
   };
 
+  const stockBadge = () => {
+    if (product.stock === 0)
+      return (
+        <span className="absolute top-3 start-3 z-10 bg-red-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold">
+          نفد المخزون
+        </span>
+      );
+    if (product.stock <= 5)
+      return (
+        <span className="absolute top-3 start-3 z-10 bg-amber-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold">
+          كمية محدودة
+        </span>
+      );
+    return null;
+  };
+
+  // ── List Layout ──
   if (isListLayout) {
-    // List layout
     return (
       <div
         onClick={handleCardClick}
-        className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-200 group cursor-pointer border border-gray-200 ${className}`}
+        className={`group bg-white rounded-2xl border border-slate-100 overflow-hidden cursor-pointer hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200 transition-all duration-300 ${className}`}
+        dir="rtl"
       >
         <div className="flex flex-col sm:flex-row">
-          <div className="relative w-full sm:w-48 h-48 sm:h-48 bg-gray-200 flex-shrink-0">
+          {/* Image */}
+          <div className="relative w-full sm:w-52 h-52 sm:h-auto bg-slate-50 flex-shrink-0 overflow-hidden">
             {product.images && product.images.length > 0 ? (
               <Image
                 src={product.images[0]}
                 alt={product.name}
                 fill
-                className="object-cover group-hover:scale-105 transition-transform duration-200"
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
               />
             ) : (
               <div className="flex items-center justify-center h-full">
-                <Package className="h-8 w-8 text-gray-400" />
+                <Package className="h-10 w-10 text-slate-300" />
               </div>
             )}
-
-            {/* Stock Status Badges */}
-            {product.stock === 0 && (
-              <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
-                نفد المخزون
-              </div>
-            )}
-
-            {product.stock > 0 && product.stock <= 5 && (
-              <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs">
-                كمية محدودة
-              </div>
-            )}
-
-            {/* Cart Status */}
+            {stockBadge()}
             {isInCart && (
-              <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
+              <span className="absolute top-3 end-3 z-10 bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold">
                 في السلة
-              </div>
+              </span>
             )}
           </div>
 
-          <div className="flex-1 p-6">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4">
-              <div className="flex-1 mb-4 sm:mb-0">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  <span className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full">
+          {/* Content */}
+          <div className="flex-1 p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full font-semibold">
                     {product.category.name}
                   </span>
-                  <span className="text-xs text-gray-500">
-                    المخزون: {product.stock}
+                  <span className="text-xs text-slate-400">
+                    مخزون: {product.stock}
                   </span>
                 </div>
-
-                <h3 className="text-xl font-semibold text-gray-900 mb-2 h-16 flex items-start">
+                <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-1">
                   {product.name}
                 </h3>
-
-                <p className="text-gray-600 mb-4 line-clamp-3 h-16 flex items-start">
+                <p className="text-slate-500 text-sm mb-3 line-clamp-2 leading-relaxed">
                   {product.description}
                 </p>
-
-                {/* Tags (if available) */}
                 {product.tags && product.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {product.tags.slice(0, 3).map((tag, index) => (
+                  <div className="flex flex-wrap gap-1.5">
+                    {product.tags.slice(0, 3).map((tag, i) => (
                       <span
-                        key={index}
-                        className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
+                        key={i}
+                        className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md"
                       >
                         {tag}
                       </span>
                     ))}
-                    {product.tags.length > 3 && (
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                        +{product.tags.length - 3}
-                      </span>
-                    )}
                   </div>
                 )}
               </div>
 
-              <div className="flex flex-col sm:items-end sm:text-left sm:ml-4">
-                <span className="text-2xl sm:text-3xl font-bold text-gray-900 block mb-4">
-                  {formatPrice(product.price)} د.م.
+              <div className="flex flex-col sm:items-end gap-3">
+                <span className="text-2xl font-bold text-indigo-600">
+                  {formatPrice(product.price)}
+                  <span className="text-sm font-normal text-slate-400 me-1">د.م.</span>
                 </span>
 
                 {isInCart && currentQuantity > 0 ? (
-                  // Quantity controls when item is in cart
                   <div className="flex items-center gap-2">
-                    {/* Remove button */}
                     <button
                       onClick={removeFromCart}
-                      className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                      aria-label="إزالة من السلة"
-                      title="إزالة من السلة"
+                      className="p-2.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                      aria-label="إزالة"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
-
-                    {/* Quantity controls */}
-                    <div className="flex items-center bg-gray-100 rounded-lg">
+                    <div className="flex items-center bg-slate-100 rounded-xl overflow-hidden">
                       <button
                         onClick={() => updateQuantity(currentQuantity - 1)}
-                        className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-l-lg transition-colors"
+                        className="p-2.5 text-slate-600 hover:bg-slate-200 transition-colors"
                         disabled={currentQuantity <= 1}
-                        aria-label="تقليل الكمية"
                       >
-                        <Minus className="h-3 w-3" />
+                        <Minus className="h-3.5 w-3.5" />
                       </button>
-                      <span className="px-3 py-1 text-sm font-medium text-gray-900 min-w-[2rem] text-center">
+                      <span className="w-10 text-center font-semibold text-slate-900 text-sm">
                         {currentQuantity}
                       </span>
                       <button
                         onClick={() => updateQuantity(currentQuantity + 1)}
-                        className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-r-lg transition-colors"
+                        className="p-2.5 text-slate-600 hover:bg-slate-200 transition-colors"
                         disabled={currentQuantity >= product.stock}
-                        aria-label="زيادة الكمية"
                       >
-                        <Plus className="h-3 w-3" />
+                        <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
                 ) : (
-                  // Add to cart button when item is not in cart
                   <button
                     onClick={handleAddToCart}
                     disabled={product.stock === 0 || isAddingToCart}
-                    className={`p-3 rounded-lg flex items-center justify-center transition-colors duration-200 ${
+                    className={`px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all duration-200 font-medium text-sm ${
                       product.stock === 0
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                         : isAddingToCart
-                        ? "bg-green-500 text-white cursor-not-allowed"
-                        : "bg-indigo-600 text-white hover:bg-indigo-700"
+                        ? "bg-emerald-500 text-white"
+                        : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/20"
                     }`}
-                    aria-label={
-                      product.stock === 0
-                        ? "غير متوفر"
-                        : isAddingToCart
-                        ? "جاري الإضافة..."
-                        : "أضف إلى السلة"
-                    }
-                    title={
-                      product.stock === 0
-                        ? "غير متوفر"
-                        : isAddingToCart
-                        ? "جاري الإضافة..."
-                        : "أضف إلى السلة"
-                    }
                   >
                     {isAddingToCart ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>تمت الإضافة!</span>
                     ) : (
-                      <ShoppingCart className="h-5 w-5" />
+                      <>
+                        <ShoppingCart className="h-4 w-4" />
+                        <span>أضف للسلة</span>
+                      </>
                     )}
                   </button>
-                )}
-
-                {/* Success Message */}
-                {isAddingToCart && (
-                  <div className="mt-2 text-xs text-green-600 text-center sm:text-right">
-                    تمت الإضافة بنجاح!
-                  </div>
                 )}
               </div>
             </div>
@@ -280,175 +236,160 @@ export default function ProductCard({
     );
   }
 
-  // Grid layout (default)
+  // ── Grid Layout ──
+  const imageHeight = compact ? "h-40" : "h-56";
+  const padding = compact ? "p-3" : "p-4";
+  const titleSize = compact ? "text-sm h-9 leading-5" : "text-sm h-10 leading-5";
+  const priceSize = compact ? "text-base" : "text-lg";
+  const btnSize = compact ? "p-2" : "p-2.5";
+  const iconSize = compact ? "h-4 w-4" : "h-4 w-4";
+
   return (
     <div
       onClick={handleCardClick}
-      className={`bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-all duration-200 group cursor-pointer border border-gray-200 ${className}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`group bg-white rounded-2xl border border-slate-100 overflow-hidden cursor-pointer hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200 hover:-translate-y-1 transition-all duration-300 ${className}`}
+      dir="rtl"
     >
-      <div className={`relative bg-gray-200 product-image ${compact ? 'h-32' : 'h-64'}`}>
+      {/* Image Area */}
+      <div className={`relative bg-slate-50 ${imageHeight} overflow-hidden`}>
         {product.images && product.images.length > 0 ? (
-          <Image
-            src={product.images[0]}
-            alt={product.name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-200"
-          />
+          <>
+            <Image
+              src={product.images[0]}
+              alt={product.name}
+              fill
+              className={`object-cover transition-all duration-500 ${imageLoaded ? "opacity-100" : "opacity-0"} ${isHovered ? "scale-105" : "scale-100"}`}
+              onLoad={() => setImageLoaded(true)}
+            />
+            {!imageLoaded && (
+              <div className="absolute inset-0 animate-shimmer" />
+            )}
+          </>
         ) : (
           <div className="flex items-center justify-center h-full">
-            <Package className={`text-gray-400 ${compact ? 'h-8 w-8' : 'h-12 w-12'}`} />
+            <Package className={`text-slate-300 ${compact ? "h-8 w-8" : "h-10 w-10"}`} />
           </div>
         )}
 
-        {/* Stock Status Badges */}
-        {product.stock === 0 && (
-          <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
-            نفد المخزون
-          </div>
-        )}
+        {/* Dark overlay on hover */}
+        <div className={`absolute inset-0 bg-black/0 transition-colors duration-300 ${isHovered ? "bg-black/5" : ""}`} />
 
-        {product.stock > 0 && product.stock <= 5 && (
-          <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs">
-            كمية محدودة
-          </div>
-        )}
+        {stockBadge()}
 
-        {/* Cart Status */}
         {isInCart && (
-          <div className="absolute top-2 left-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
+          <span className="absolute top-3 end-3 z-10 bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold">
             في السلة
-          </div>
+          </span>
         )}
+
+        {/* Quick view button */}
+        <div className={`absolute bottom-3 end-3 transition-all duration-300 ${isHovered ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
+          <span className="flex items-center gap-1.5 bg-white/95 backdrop-blur-sm text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium shadow-sm">
+            <Eye className="h-3.5 w-3.5" />
+            عرض التفاصيل
+          </span>
+        </div>
       </div>
 
-      <div className={`product-content ${compact ? 'p-3' : 'p-6'}`}>
-        {/* Category Badge */}
-        <div className="flex items-center justify-between mb-2">
-          <span className={`bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full ${compact ? 'text-xs' : 'text-xs'}`}>
+      {/* Content */}
+      <div className={`${padding}`}>
+        {/* Category + Stock */}
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">
             {product.category.name}
           </span>
           {!compact && (
-            <span className="text-xs text-gray-500">
-              المخزون: {product.stock}
+            <span className="text-[10px] text-slate-400">
+              مخزون: {product.stock}
             </span>
           )}
         </div>
 
-        {/* Product Name */}
-        <h3 className={`font-semibold text-gray-900 mb-2 line-clamp-2 flex items-start product-title ${compact ? 'text-sm h-8' : 'text-lg h-14'}`}>
+        {/* Title */}
+        <h3 className={`font-bold text-slate-900 mb-1.5 line-clamp-2 ${titleSize}`}>
           {product.name}
         </h3>
 
-        {/* Product Description - only show in non-compact mode */}
+        {/* Description */}
         {!compact && (
-          <p className="text-gray-600 text-sm mb-4 line-clamp-2 h-10 flex items-start">
+          <p className="text-slate-500 text-xs mb-2.5 line-clamp-2 leading-relaxed h-8">
             {product.description}
           </p>
         )}
 
-        {/* Tags (if available) - only show in non-compact mode */}
+        {/* Tags */}
         {!compact && product.tags && product.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {product.tags.slice(0, 3).map((tag, index) => (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {product.tags.slice(0, 2).map((tag, i) => (
               <span
-                key={index}
-                className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
+                key={i}
+                className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md"
               >
                 {tag}
               </span>
             ))}
-            {product.tags.length > 3 && (
-              <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                +{product.tags.length - 3}
-              </span>
-            )}
           </div>
         )}
 
-        {/* Price and Cart Controls */}
-        <div className="flex items-center justify-between">
-          <span className={`font-bold text-gray-900 product-price ${compact ? 'text-lg' : 'text-2xl'}`}>
-            {formatPrice(product.price)} د.م.
+        {/* Price & Action */}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+          <span className={`font-bold text-indigo-600 ${priceSize}`}>
+            {formatPrice(product.price)}
+            <span className="text-xs font-normal text-slate-400 me-1">د.م.</span>
           </span>
 
           {isInCart && currentQuantity > 0 ? (
-            // Quantity controls when item is in cart
             <div className="flex items-center gap-1">
-              {/* Remove button */}
               <button
                 onClick={removeFromCart}
-                className={`rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition-colors ${compact ? 'p-1' : 'p-1.5'}`}
-                aria-label="إزالة من السلة"
-                title="إزالة من السلة"
+                className={`rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors ${btnSize}`}
+                aria-label="إزالة"
               >
-                <Trash2 className={compact ? 'h-3 w-3' : 'h-4 w-4'} />
+                <Trash2 className={iconSize} />
               </button>
-
-              {/* Quantity controls */}
-              <div className="flex items-center bg-gray-100 rounded-lg">
+              <div className="flex items-center bg-slate-100 rounded-lg overflow-hidden">
                 <button
                   onClick={() => updateQuantity(currentQuantity - 1)}
-                  className={`text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-l-lg transition-colors ${compact ? 'p-1' : 'p-1.5'}`}
+                  className={`text-slate-600 hover:bg-slate-200 transition-colors ${btnSize}`}
                   disabled={currentQuantity <= 1}
-                  aria-label="تقليل الكمية"
                 >
-                  <Minus className={compact ? 'h-2 w-2' : 'h-3 w-3'} />
+                  <Minus className="h-3 w-3" />
                 </button>
-                <span className={`font-medium text-gray-900 min-w-[2rem] text-center ${compact ? 'px-2 py-1 text-xs' : 'px-3 py-1 text-sm'}`}>
+                <span className={`font-semibold text-slate-900 text-center min-w-[1.25rem] ${compact ? "px-1 py-0.5 text-xs" : "px-1.5 py-1 text-xs"}`}>
                   {currentQuantity}
                 </span>
                 <button
                   onClick={() => updateQuantity(currentQuantity + 1)}
-                  className={`text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-r-lg transition-colors ${compact ? 'p-1' : 'p-1.5'}`}
+                  className={`text-slate-600 hover:bg-slate-200 transition-colors ${btnSize}`}
                   disabled={currentQuantity >= product.stock}
-                  aria-label="زيادة الكمية"
                 >
-                  <Plus className={compact ? 'h-2 w-2' : 'h-3 w-3'} />
+                  <Plus className="h-3 w-3" />
                 </button>
               </div>
             </div>
           ) : (
-            // Add to cart button when item is not in cart
             <button
               onClick={handleAddToCart}
               disabled={product.stock === 0 || isAddingToCart}
-              className={`rounded-lg flex items-center justify-center transition-colors duration-200 ${
+              className={`rounded-xl flex items-center justify-center transition-all duration-200 ${
                 product.stock === 0
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                   : isAddingToCart
-                  ? "bg-green-500 text-white cursor-not-allowed"
-                  : "bg-indigo-600 text-white hover:bg-indigo-700"
-              } ${compact ? 'p-1.5' : 'p-2'}`}
-              aria-label={
-                product.stock === 0
-                  ? "غير متوفر"
-                  : isAddingToCart
-                  ? "جاري الإضافة..."
-                  : "أضف إلى السلة"
-              }
-              title={
-                product.stock === 0
-                  ? "غير متوفر"
-                  : isAddingToCart
-                  ? "جاري الإضافة..."
-                  : "أضف إلى السلة"
-              }
+                  ? "bg-emerald-500 text-white"
+                  : "bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/20"
+              } ${btnSize}`}
+              aria-label={product.stock === 0 ? "غير متوفر" : "أضف للسلة"}
             >
               {isAddingToCart ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white" />
               ) : (
-                <ShoppingCart className={compact ? 'h-4 w-4' : 'h-5 w-5'} />
+                <ShoppingCart className={iconSize} />
               )}
             </button>
           )}
         </div>
-
-        {/* Success Message */}
-        {isAddingToCart && (
-          <div className={`text-green-600 text-center ${compact ? 'mt-1 text-xs' : 'mt-2 text-xs'}`}>
-            تمت الإضافة بنجاح!
-          </div>
-        )}
       </div>
     </div>
   );

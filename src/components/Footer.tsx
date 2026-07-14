@@ -12,201 +12,171 @@ import {
   Instagram,
   Youtube,
   Heart,
+  ArrowUp,
+  CreditCard,
+  Truck,
+  ShieldCheck,
+  Clock,
 } from "lucide-react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-slate-900 text-white relative overflow-hidden" dir="rtl">
+      {/* Decorative gradient blob */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Trust Badges */}
+      <div className="relative border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { icon: Truck, title: "توصيل سريع", desc: "لجميع المدن المغربية" },
+              { icon: ShieldCheck, title: "دفع آمن", desc: "100% محمي" },
+              { icon: Clock, title: "خدمة 24/7", desc: "دعم على مدار الساعة" },
+              { icon: CreditCard, title: "الدفع عند الاستلام", desc: "أو تحويل بنكي" },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <div className="p-2.5 bg-indigo-500/10 rounded-xl">
+                    <Icon className="h-5 w-5 text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">{item.title}</p>
+                    <p className="text-xs text-slate-400">{item.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10">
           {/* Company Info */}
-          <div className="col-span-1 md:col-span-2 order-3 md:order-1">
-            <div className="flex items-center justify-end space-x-2 mb-4">
-              <span className="text-2xl font-bold">مكتبتي</span>
-              <BookOpen className="h-8 w-8 text-indigo-400" />
+          <div className="lg:col-span-5">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="p-2 bg-indigo-500/10 rounded-xl">
+                <BookOpen className="h-6 w-6 text-indigo-400" />
+              </div>
+              <span className="text-2xl font-bold tracking-tight">مكتبتي</span>
             </div>
-            <p className="text-gray-400 mb-6 text-right leading-relaxed">
-              شريكك الموثوق للوازم المدرسية عالية الجودة. نحن نوفر كل ما يحتاجه
+            <p className="text-slate-400 mb-6 leading-relaxed text-sm max-w-sm">
+              شريكك الموثوق للوازم المدرسية عالية الجودة. نوفر كل ما يحتاجه
               الطلاب للنجاح الأكاديمي والإبداعي في رحلتهم التعليمية.
             </p>
 
             {/* Contact Info */}
             <div className="space-y-3 mb-6">
-              <div className="flex items-center justify-end space-x-3 text-gray-400">
-                <span className="text-sm">وزان، المغرب</span>
-                <MapPin className="h-4 w-4 text-indigo-400" />
-              </div>
-              <div className="flex items-center justify-end space-x-3 text-gray-400">
-                <span className="text-sm"> 0629504107 </span>
-                <Phone className="h-4 w-4 text-indigo-400" />
-              </div>
-              <div className="flex items-center justify-end space-x-3 text-gray-400">
-                <span className="text-sm">contact@maktabati.ma</span>
-                <Mail className="h-4 w-4 text-indigo-400" />
-              </div>
+              {[
+                { icon: MapPin, text: "وزان، المغرب" },
+                { icon: Phone, text: "0629504107" },
+                { icon: Mail, text: "contact@maktabati.ma" },
+              ].map((item, i) => {
+                const Icon = item.icon;
+                return (
+                  <div key={i} className="flex items-center gap-3 text-slate-400 text-sm">
+                    <Icon className="h-4 w-4 text-indigo-400 shrink-0" />
+                    <span>{item.text}</span>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Social Media */}
-            <div className="flex justify-end space-x-4">
-              <Link
-                href="#"
-                className="text-gray-400 hover:text-indigo-400 transition-colors duration-200"
-                aria-label="Facebook"
-              >
-                <Facebook className="h-5 w-5" />
-              </Link>
-              <Link
-                href="#"
-                className="text-gray-400 hover:text-indigo-400 transition-colors duration-200"
-                aria-label="Twitter"
-              >
-                <Twitter className="h-5 w-5" />
-              </Link>
-              <Link
-                href="#"
-                className="text-gray-400 hover:text-indigo-400 transition-colors duration-200"
-                aria-label="Instagram"
-              >
-                <Instagram className="h-5 w-5" />
-              </Link>
-              <Link
-                href="#"
-                className="text-gray-400 hover:text-indigo-400 transition-colors duration-200"
-                aria-label="YouTube"
-              >
-                <Youtube className="h-5 w-5" />
-              </Link>
+            <div className="flex items-center gap-2">
+              {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
+                <Link
+                  key={i}
+                  href="#"
+                  className="p-2.5 bg-slate-800 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-400 rounded-xl transition-all duration-200"
+                  aria-label="Social"
+                >
+                  <Icon className="h-4 w-4" />
+                </Link>
+              ))}
             </div>
           </div>
 
           {/* Quick Links */}
-          <div className="order-2 md:order-2">
-            <h3 className="text-lg font-semibold mb-4 text-right">
-              روابط سريعة
-            </h3>
+          <div className="lg:col-span-3">
+            <h3 className="text-base font-semibold mb-5">روابط سريعة</h3>
             <ul className="space-y-3">
-              <li className="text-right">
-                <Link
-                  href="/"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  الرئيسية
-                </Link>
-              </li>
-              <li className="text-right">
-                <Link
-                  href="/products"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  المنتجات
-                </Link>
-              </li>
-              <li className="text-right">
-                <Link
-                  href="/categories"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  الفئات
-                </Link>
-              </li>
-              <li className="text-right">
-                <Link
-                  href="/about"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  من نحن
-                </Link>
-              </li>
-              <li className="text-right">
-                <Link
-                  href="/contact"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  اتصل بنا
-                </Link>
-              </li>
-              <li className="text-right">
-                <Link
-                  href="/cart"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  السلة
-                </Link>
-              </li>
+              {[
+                { href: "/", label: "الرئيسية" },
+                { href: "/products", label: "المنتجات" },
+                { href: "/categories", label: "الفئات" },
+                { href: "/about", label: "من نحن" },
+                { href: "/contact", label: "اتصل بنا" },
+                { href: "/cart", label: "السلة" },
+              ].map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="text-slate-400 hover:text-white text-sm transition-colors duration-200 inline-flex items-center gap-2 group"
+                  >
+                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Categories */}
-          <div className="order-1 md:order-3">
-            <h3 className="text-lg font-semibold mb-4 text-right">الفئات</h3>
+          <div className="lg:col-span-4">
+            <h3 className="text-base font-semibold mb-5">الفئات</h3>
             <ul className="space-y-3">
-              <li className="text-right">
-                <Link
-                  href="/categories/textbooks"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  الكتب المدرسية
-                </Link>
-              </li>
-              <li className="text-right">
-                <Link
-                  href="/categories/stationery"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  أدوات الكتابة
-                </Link>
-              </li>
-              <li className="text-right">
-                <Link
-                  href="/categories/art-supplies"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  لوازم الفنون
-                </Link>
-              </li>
-              <li className="text-right">
-                <Link
-                  href="/categories/calculators"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  الحاسبات
-                </Link>
-              </li>
-              <li className="text-right">
-                <Link
-                  href="/categories/backpacks"
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
-                >
-                  الحقائب المدرسية
-                </Link>
-              </li>
+              {[
+                { href: "/categories/textbooks", label: "الكتب المدرسية" },
+                { href: "/categories/stationery", label: "أدوات الكتابة" },
+                { href: "/categories/art-supplies", label: "لوازم الفنون" },
+                { href: "/categories/calculators", label: "الحاسبات" },
+                { href: "/categories/backpacks", label: "الحقائب المدرسية" },
+              ].map((item) => (
+                <li key={item.href}>
+                  <Link
+                    href={item.href}
+                    className="text-slate-400 hover:text-white text-sm transition-colors duration-200 inline-flex items-center gap-2 group"
+                  >
+                    <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
       </div>
 
       {/* Newsletter Section */}
-      <div className="border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="relative border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-            <div className="text-center lg:text-right">
-              <h4 className="text-xl font-semibold mb-2">
+            <div>
+              <h4 className="text-lg font-semibold mb-2">
                 اشترك في نشرتنا الإخبارية
               </h4>
-              <p className="text-gray-400">
-                احصل على أحدث العروض والمنتجات الجديدة
+              <p className="text-slate-400 text-sm">
+                احصل على أحدث العروض والمنتجات الجديدة مباشرة إلى بريدك
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="email"
                 placeholder="أدخل بريدك الإلكتروني"
-                className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all duration-200"
               />
-              <button className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-medium">
+              <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition-colors duration-200 shadow-lg shadow-indigo-600/20">
                 اشترك
               </button>
             </div>
@@ -215,44 +185,46 @@ export default function Footer() {
       </div>
 
       {/* Bottom Footer */}
-      <div className="border-t border-gray-800">
+      <div className="relative border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center space-x-2 text-sm text-gray-400">
+            <div className="flex items-center gap-1 text-sm text-slate-400">
               <span>بنيت بـ</span>
               <Heart className="h-4 w-4 text-red-500 fill-current" />
               <span>للطلاب</span>
             </div>
 
-            <div className="flex items-center space-x-6 text-sm">
-              <Link
-                href="/privacy"
-                className="text-gray-400 hover:text-white transition-colors duration-200"
-              >
-                سياسة الخصوصية
-              </Link>
-              <Link
-                href="/terms"
-                className="text-gray-400 hover:text-white transition-colors duration-200"
-              >
-                شروط الاستخدام
-              </Link>
-              <Link
-                href="/shipping"
-                className="text-gray-400 hover:text-white transition-colors duration-200"
-              >
-                سياسة الشحن
-              </Link>
+            <div className="flex items-center gap-6 text-sm">
+              {["سياسة الشحن", "شروط الاستخدام", "سياسة الخصوصية"].map(
+                (label) => (
+                  <Link
+                    key={label}
+                    href="#"
+                    className="text-slate-400 hover:text-white transition-colors duration-200"
+                  >
+                    {label}
+                  </Link>
+                )
+              )}
             </div>
           </div>
 
-          <div className="text-center mt-6 pt-6 border-t border-gray-800">
-            <p className="text-gray-400 text-sm">
+          <div className="text-center mt-6 pt-6 border-t border-slate-800">
+            <p className="text-slate-500 text-sm">
               &copy; {currentYear} مكتبتي. جميع الحقوق محفوظة.
             </p>
           </div>
         </div>
       </div>
+
+      {/* Scroll to top */}
+      <button
+        onClick={scrollToTop}
+        className="fixed bottom-6 left-6 z-40 p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/30 transition-all duration-300 hover:scale-110"
+        aria-label="العودة للأعلى"
+      >
+        <ArrowUp className="h-5 w-5" />
+      </button>
     </footer>
   );
 }

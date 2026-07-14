@@ -15,6 +15,10 @@ import {
   BarChart3,
   TrendingUp,
   ShoppingBag,
+  ArrowRight,
+  FolderOpen,
+  Grid3x3,
+  Loader2,
 } from "lucide-react";
 
 interface Category {
@@ -28,11 +32,6 @@ interface Category {
 interface CategoryStats {
   totalCategories: number;
   totalProducts: number;
-  averageProductsPerCategory: number;
-  mostPopularCategory: {
-    name: string;
-    productCount: number;
-  } | null;
 }
 
 export default function ManageCategoriesPage() {
@@ -41,9 +40,7 @@ export default function ManageCategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletingCategory, setDeletingCategory] = useState<Category | null>(
-    null
-  );
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -52,14 +49,12 @@ export default function ManageCategoriesPage() {
     try {
       const token = localStorage.getItem("adminToken");
       const response = await fetch("/api/admin/categories", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
-
       if (response.ok) {
         setCategories(data.categories);
+        setStats({ totalCategories: data.categories.length, totalProducts: 0 });
       } else {
         setError(data.error || "Failed to fetch categories");
       }
@@ -71,65 +66,31 @@ export default function ManageCategoriesPage() {
     }
   };
 
-  const fetchStats = useCallback(async () => {
-    try {
-      // You would typically have a separate API endpoint for stats
-      // For now, we'll calculate basic stats from categories
-      const totalCategories = categories.length;
-      const stats: CategoryStats = {
-        totalCategories,
-        totalProducts: 0, // This would come from API
-        averageProductsPerCategory: 0,
-        mostPopularCategory: null,
-      };
-
-      setStats(stats);
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    }
-  }, [categories]);
-
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  useEffect(() => {
-    if (categories.length > 0) {
-      fetchStats();
-    }
-  }, [categories, fetchStats]);
-
   const filteredCategories = categories.filter(
     (category) =>
       category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (category.description &&
-        category.description.toLowerCase().includes(searchTerm.toLowerCase()))
+      (category.description && category.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleDelete = async () => {
     if (!deletingCategory) return;
-
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const response = await fetch(
-        `/api/admin/categories?id=${deletingCategory._id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const response = await fetch(`/api/admin/categories?id=${deletingCategory._id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await response.json();
-
       if (response.ok) {
         setSuccess("تم حذف الفئة بنجاح");
         setShowDeleteModal(false);
         setDeletingCategory(null);
         fetchCategories();
-
         setTimeout(() => setSuccess(""), 3000);
       } else {
         setError(data.error || "حدث خطأ أثناء حذف الفئة");
@@ -142,222 +103,153 @@ export default function ManageCategoriesPage() {
     }
   };
 
-  const StatCard = ({
-    title,
-    value,
-    icon: Icon,
-    color,
-  }: {
-    title: string;
-    value: string | number;
-    icon: React.ComponentType<{ className?: string }>;
-    color: string;
-  }) => (
-    <div
-      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${color}`}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-        </div>
-        <Icon className="h-8 w-8 text-gray-400" />
-      </div>
-    </div>
-  );
-
   return (
-    <DashboardLayout title="إدارة الفئات المتقدمة">
+    <DashboardLayout title="إدارة الفئات">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">إدارة الفئات</h1>
-            <p className="text-gray-600 mt-1">
-              مراقبة وإدارة فئات المنتجات في المتجر
-            </p>
+            <h1 className="text-2xl font-bold text-slate-900">إدارة الفئات</h1>
+            <p className="text-slate-500 text-sm mt-1">مراقبة وإدارة فئات المنتجات في المتجر</p>
           </div>
-          <div className="flex gap-3">
-            <Link
-              href="/admin/dashboard/categories/add"
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              <Plus className="h-5 w-5" />
-              إضافة فئة جديدة
-            </Link>
+          <div className="flex gap-2">
             <Link
               href="/admin/dashboard/categories"
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-all"
             >
-              عرض الفئات
+              <Grid3x3 className="h-4 w-4" />
+              عرض البطاقات
+            </Link>
+            <Link
+              href="/admin/dashboard/categories/add"
+              className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-all hover:shadow-lg hover:shadow-indigo-600/20"
+            >
+              <Plus className="h-4 w-4" />
+              إضافة فئة
             </Link>
           </div>
         </div>
 
-        {/* Success/Error Messages */}
+        {/* Alerts */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
+          <div className="bg-red-50 border border-red-100 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
             {error}
           </div>
         )}
-
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-center gap-2">
-            <Check className="h-5 w-5" />
+          <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
+            <Check className="h-4 w-4 shrink-0" />
             {success}
           </div>
         )}
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard
-            title="إجمالي الفئات"
-            value={stats?.totalCategories || 0}
-            icon={Package}
-            color=""
-          />
-          <StatCard
-            title="إجمالي المنتجات"
-            value={stats?.totalProducts || 0}
-            icon={ShoppingBag}
-            color=""
-          />
-          <StatCard
-            title="متوسط المنتجات لكل فئة"
-            value={stats?.averageProductsPerCategory || 0}
-            icon={BarChart3}
-            color=""
-          />
-          <StatCard
-            title="الفئة الأكثر شعبية"
-            value={stats?.mostPopularCategory?.name || "غير محدد"}
-            icon={TrendingUp}
-            color=""
-          />
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {[
+            { title: "إجمالي الفئات", value: stats?.totalCategories || 0, icon: FolderOpen, gradient: "from-indigo-500 to-violet-400" },
+            { title: "إجمالي المنتجات", value: "—", icon: ShoppingBag, gradient: "from-emerald-500 to-teal-400" },
+            { title: "متوسط المنتجات/فئة", value: "—", icon: BarChart3, gradient: "from-amber-500 to-orange-400" },
+          ].map((stat, i) => {
+            const Icon = stat.icon;
+            return (
+              <div key={i} className="bg-white rounded-2xl border border-slate-100 p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-slate-500 mb-1">{stat.title}</p>
+                    <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                  </div>
+                  <div className={`p-2.5 rounded-xl bg-gradient-to-br ${stat.gradient}`}>
+                    <Icon className="h-5 w-5 text-white" />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Search and Actions */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="البحث في الفئات..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="block w-full text-black pr-10 pl-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-                <BarChart3 className="h-4 w-4" />
-                تقارير
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-                <TrendingUp className="h-4 w-4" />
-                تحليلات
-              </button>
-            </div>
+        {/* Search */}
+        <div className="bg-white rounded-2xl border border-slate-100 p-5">
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="البحث في الفئات..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pr-11 pl-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 focus:bg-white transition-all"
+            />
           </div>
         </div>
 
-        {/* Categories Table */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">جميع الفئات</h3>
-            <p className="text-sm text-gray-600">
-              إدارة فئات المنتجات ومراقبة الأداء
-            </p>
+        {/* Table */}
+        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-50">
+            <h3 className="text-base font-bold text-slate-900">جميع الفئات</h3>
+            <p className="text-xs text-slate-400 mt-0.5">إدارة فئات المنتجات ومراقبة الأداء</p>
           </div>
 
           {loading ? (
-            <div className="p-6">
-              <div className="space-y-4">
-                {[...Array(5)].map((_, index) => (
-                  <div key={index} className="animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
+            <div className="p-8 space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+              ))}
             </div>
           ) : filteredCategories.length === 0 ? (
-            <div className="p-12 text-center">
-              <Package className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
-                {searchTerm ? "لم يتم العثور على فئات" : "لا توجد فئات"}
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {searchTerm
-                  ? "جرب تعديل كلمات البحث."
-                  : "ابدأ بإضافة فئتك الأولى."}
-              </p>
+            <div className="p-16 text-center">
+              <div className="bg-slate-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-5">
+                <FolderOpen className="h-8 w-8 text-slate-400" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">{searchTerm ? "لم يتم العثور على فئات" : "لا توجد فئات"}</h3>
+              <p className="text-slate-500 text-sm">{searchTerm ? "جرب تعديل كلمات البحث" : "ابدأ بإضافة فئتك الأولى"}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      الفئة
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      الوصف
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      عدد المنتجات
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      تاريخ الإنشاء
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      الإجراءات
-                    </th>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-50">
+                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase">الفئة</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase">الوصف</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase">المنتجات</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase">تاريخ الإنشاء</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase">الإجراءات</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-slate-50">
                   {filteredCategories.map((category) => (
-                    <tr key={category._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {category.name}
+                    <tr key={category._id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 bg-indigo-50 rounded-lg flex items-center justify-center">
+                            <FolderOpen className="h-4 w-4 text-indigo-600" />
+                          </div>
+                          <span className="text-sm font-bold text-slate-900">{category.name}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="text-sm text-gray-600 max-w-xs truncate">
-                          {category.description || "لا يوجد وصف"}
-                        </div>
+                        <p className="text-sm text-slate-500 max-w-xs truncate">{category.description || "لا يوجد وصف"}</p>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-600">
                           0 منتج
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(category.createdAt).toLocaleDateString(
-                          "ar-SA"
-                        )}
+                      <td className="px-6 py-4 text-sm text-slate-500">
+                        {new Date(category.createdAt).toLocaleDateString("ar-MA")}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center gap-2">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1">
                           <Link
                             href={`/admin/dashboard/categories/edit/${category._id}`}
-                            className="text-indigo-600 hover:text-indigo-900"
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                            title="تعديل"
                           >
                             <Edit className="h-4 w-4" />
                           </Link>
                           <button
-                            onClick={() => {
-                              setDeletingCategory(category);
-                              setShowDeleteModal(true);
-                            }}
-                            className="text-red-600 hover:text-red-900"
+                            onClick={() => { setDeletingCategory(category); setShowDeleteModal(true); }}
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            title="حذف"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -371,71 +263,37 @@ export default function ManageCategoriesPage() {
           )}
         </div>
 
-        {/* Delete Confirmation Modal */}
-        <Modal
-          isOpen={showDeleteModal}
-          onClose={() => setShowDeleteModal(false)}
-          title="تأكيد الحذف"
-        >
-          <div className="text-center">
-            <AlertTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              هل أنت متأكد من حذف هذه الفئة؟
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              سيتم حذف الفئة &quot;{deletingCategory?.name}&quot; نهائياً. هذا
-              الإجراء لا يمكن التراجع عنه.
-            </p>
-            <div className="flex justify-center gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                إلغاء
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={isSubmitting}
-                className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? "جاري الحذف..." : "حذف"}
-              </button>
+        {/* Delete Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-scale-in text-center">
+              <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle className="h-7 w-7 text-red-500" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">تأكيد الحذف</h3>
+              <p className="text-sm text-slate-500 mb-6">
+                هل أنت متأكد من حذف &quot;{deletingCategory?.name}&quot;؟ هذا الإجراء لا يمكن التراجع عنه.
+              </p>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-all"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={isSubmitting}
+                  className="px-5 py-2.5 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                  حذف
+                </button>
+              </div>
             </div>
           </div>
-        </Modal>
+        )}
       </div>
     </DashboardLayout>
   );
 }
-
-// Modal component (same as in categories page)
-const Modal = ({
-  isOpen,
-  onClose,
-  title,
-  children,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 modal">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-        <div className="p-6">{children}</div>
-      </div>
-    </div>
-  );
-};

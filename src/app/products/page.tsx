@@ -1,17 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Search,
-  ChevronRight,
   ChevronLeft,
+  ChevronRight,
   ChevronDown,
   Package,
   Grid,
   List,
   X,
   Filter,
-  Menu,
+  SlidersHorizontal,
+  ArrowLeft,
+  ShoppingBag,
 } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 
@@ -20,14 +23,12 @@ interface Product {
   name: string;
   description: string;
   price: number;
-  category: {
-    _id: string;
-    name: string;
-  };
+  category: { _id: string; name: string; slug?: string };
   images: string[];
   stock: number;
   isActive: boolean;
   tags?: string[];
+  slug?: string;
 }
 
 interface CartItem {
@@ -49,6 +50,22 @@ interface Pagination {
 }
 
 export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center" dir="rtl">
+        <div className="relative w-14 h-14">
+          <div className="absolute inset-0 border-4 border-indigo-100 rounded-full" />
+          <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin" />
+        </div>
+      </div>
+    }>
+      <ProductsPageContent />
+    </Suspense>
+  );
+}
+
+function ProductsPageContent() {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,53 +78,41 @@ export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [showFilters, setShowFilters] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [cartCount, setCartCount] = useState(0);
+  const [searchFocused, setSearchFocused] = useState(false);
 
-  // New state for modern design
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [categorySliderScroll, setCategorySliderScroll] = useState(0);
-  const categorySliderRef = useRef<HTMLDivElement>(null);
+  // Read category from URL on initial load
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get("category");
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl);
+    }
+  }, [searchParams]);
 
-  // Load cart and settings from localStorage on component mount
   useEffect(() => {
     const savedCart = localStorage.getItem("maktabati_cart");
     if (savedCart) {
       try {
         const parsedCart = JSON.parse(savedCart);
         setCartItems(parsedCart);
-        const totalCount = parsedCart.reduce(
-          (total: number, item: CartItem) => total + item.quantity,
-          0
-        );
-        setCartCount(totalCount);
-      } catch (error) {
-        console.error("Error loading cart from localStorage:", error);
-      }
+      } catch { /* ignore */ }
     }
   }, []);
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (mobileFiltersOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "";
     }
-
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    return () => { document.body.style.overflow = ""; };
   }, [mobileFiltersOpen]);
 
   const updateCartInStorage = (items: CartItem[]) => {
     localStorage.setItem("maktabati_cart", JSON.stringify(items));
-    const totalCount = items.reduce((total, item) => total + item.quantity, 0);
-    setCartCount(totalCount);
+    setCartItems(items);
+    window.dispatchEvent(new CustomEvent("cartUpdated"));
   };
 
   const fetchProducts = useCallback(async () => {
@@ -122,10 +127,8 @@ export default function ProductsPage() {
         ...(minPrice && { minPrice }),
         ...(maxPrice && { maxPrice }),
       });
-
       const response = await fetch(`/api/products?${params}`);
       const data = await response.json();
-
       if (response.ok) {
         setProducts(data.products);
         setPagination(data.pagination);
@@ -135,44 +138,20 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [
-    currentPage,
-    searchTerm,
-    selectedCategory,
-    sortBy,
-    sortOrder,
-    minPrice,
-    maxPrice,
-  ]);
+  }, [currentPage, searchTerm, selectedCategory, sortBy, sortOrder, minPrice, maxPrice]);
 
   const fetchCategories = async () => {
     try {
       const response = await fetch("/api/admin/categories");
       const data = await response.json();
-      if (response.ok) {
-        setCategories(data.categories);
-      }
+      if (response.ok) setCategories(data.categories);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
   };
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    fetchProducts();
-  }, [
-    currentPage,
-    searchTerm,
-    selectedCategory,
-    sortBy,
-    sortOrder,
-    minPrice,
-    maxPrice,
-    fetchProducts,
-  ]);
+  useEffect(() => { fetchCategories(); }, []);
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,606 +169,557 @@ export default function ProductsPage() {
     setCurrentPage(1);
   };
 
-  // Category slider functions
-  const scrollCategories = (direction: "left" | "right") => {
-    if (categorySliderRef.current) {
-      const scrollAmount = 280; // Increased for bigger circles (128px + 32px gap)
-      const newScroll =
-        direction === "left"
-          ? Math.max(0, categorySliderScroll - scrollAmount)
-          : categorySliderScroll + scrollAmount;
-
-      categorySliderRef.current.scrollTo({
-        left: newScroll,
-        behavior: "smooth",
-      });
-      setCategorySliderScroll(newScroll);
-    }
-  };
-
   const handleCategorySelect = (categoryId: string) => {
-    setActiveCategory(categoryId);
     setSelectedCategory(categoryId);
     setCurrentPage(1);
   };
 
   const addToCart = (product: Product) => {
     if (product.stock === 0) return;
-
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find(
-        (item) => item.product._id === product._id
+    const currentCart = JSON.parse(localStorage.getItem("maktabati_cart") || "[]");
+    const existingItem = currentCart.find((item: CartItem) => item.product._id === product._id);
+    let newItems;
+    if (existingItem) {
+      newItems = currentCart.map((item: CartItem) =>
+        item.product._id === product._id
+          ? { ...item, quantity: Math.min(item.quantity + 1, product.stock) }
+          : item
       );
-
-      let newItems;
-      if (existingItem) {
-        // Increase quantity if item already exists
-        newItems = prevItems.map((item) =>
-          item.product._id === product._id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        // Add new item to cart
-        newItems = [...prevItems, { product, quantity: 1 }];
-      }
-
-      // Update localStorage and cart count
-      updateCartInStorage(newItems);
-
-      return newItems;
-    });
-
-    // Show success feedback (you could add a toast notification here)
-    console.log(`تم إضافة ${product.name} إلى السلة`);
+    } else {
+      newItems = [...currentCart, { product, quantity: 1 }];
+    }
+    updateCartInStorage(newItems);
   };
 
-  return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50"
-      dir="rtl"
-    >
-      
-      {/* Modern Page Header */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
-              جميع المنتجات
-            </h1>
-            <p className="text-xl text-indigo-100 mb-8 drop-shadow">
-              اكتشف مجموعتنا الكاملة من لوازم المدرسة
-            </p>
-          </div>
+  const activeFiltersCount = [
+    searchTerm,
+    selectedCategory !== "all" ? "1" : "",
+    minPrice,
+    maxPrice,
+  ].filter(Boolean).length;
 
-          {/* Modern Search Bar */}
-          <div className="max-w-2xl mx-auto mb-8">
-            <form onSubmit={handleSearch} className="relative">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="البحث في الاسم أو العلامات أو الوصف..."
-                className="w-full pl-12 pr-4 py-4 text-lg border-0 rounded-2xl bg-white/95 backdrop-blur-sm shadow-xl focus:ring-4 focus:ring-white/50 focus:outline-none transition-all duration-300"
-              />
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
+  const sortOptions = [
+    { value: "createdAt-desc", label: "الأحدث" },
+    { value: "createdAt-asc", label: "الأقدم" },
+    { value: "name-asc", label: "الاسم: أ-ي" },
+    { value: "name-desc", label: "الاسم: ي-أ" },
+    { value: "price-asc", label: "السعر: الأقل" },
+    { value: "price-desc", label: "السعر: الأعلى" },
+  ];
+
+  const currentSortLabel = sortOptions.find((o) => o.value === `${sortBy}-${sortOrder}`)?.label || "الترتيب";
+
+  return (
+    <div className="min-h-screen bg-slate-50" dir="rtl">
+      {/* ── Page Header ── */}
+      <div className="bg-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">جميع المنتجات</h1>
+              <p className="text-slate-500 mt-1">اكتشف مجموعتنا الكاملة من لوازم المدرسة</p>
+            </div>
+            {/* Search */}
+            <form onSubmit={handleSearch} className="w-full lg:w-96">
+              <div className={`relative transition-all duration-300 ${searchFocused ? "lg:w-[28rem]" : ""}`}>
+                <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="ابحث عن منتج..."
+                  onFocus={() => setSearchFocused(true)}
+                  onBlur={() => setSearchFocused(false)}
+                  className="w-full ps-10 pe-10 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 focus:bg-white transition-all text-sm text-slate-900 placeholder:text-slate-400"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="absolute end-3 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </form>
           </div>
+        </div>
+      </div>
 
-          {/* View Mode Toggle */}
-          <div className="flex justify-center mb-6">
-            <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-2 shadow-xl">
+      {/* ── Category Tabs ── */}
+      <div className="bg-white border-b border-slate-100 sticky top-[100px] z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-hide">
+            <button
+              onClick={() => handleCategorySelect("all")}
+              className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                selectedCategory === "all"
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
+              }`}
+            >
+              الكل
+            </button>
+            {categories.map((cat) => (
               <button
-                onClick={() => setViewMode("grid")}
-                className={`p-3 rounded-xl transition-all duration-300 ${
-                  viewMode === "grid"
-                    ? "bg-white text-indigo-600 shadow-lg scale-105"
-                    : "text-white hover:bg-white/10"
+                key={cat._id}
+                onClick={() => handleCategorySelect(cat._id)}
+                className={`shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  selectedCategory === cat._id
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                    : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
                 }`}
               >
-                <Grid className="h-5 w-5" />
+                {cat.name}
               </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-3 rounded-xl transition-all duration-300 ${
-                  viewMode === "list"
-                    ? "bg-white text-indigo-600 shadow-lg scale-105"
-                    : "text-white hover:bg-white/10"
-                }`}
-              >
-                <List className="h-5 w-5" />
-              </button>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Modern Category Slider */}
-      <div className="bg-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10">
-          <div className="flex items-center justify-between mb-10">
-            <h2 className="text-4xl font-bold text-gray-900">الفئات</h2>
-            <div className="flex gap-3">
+      {/* ── Filter Bar ── */}
+      <div className="bg-white border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {/* Mobile Filter Toggle */}
               <button
-                onClick={() => scrollCategories("left")}
-                className="p-3 rounded-full bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-md hover:shadow-lg"
+                onClick={() => setMobileFiltersOpen(true)}
+                className="lg:hidden flex items-center gap-2 px-3.5 py-2 bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-100 transition-all"
               >
-                <ChevronLeft className="h-6 w-6 text-gray-700" />
-              </button>
-              <button
-                onClick={() => scrollCategories("right")}
-                className="p-3 rounded-full bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 transition-all duration-200 shadow-md hover:shadow-lg"
-              >
-                <ChevronRight className="h-6 w-6 text-gray-700" />
-              </button>
-            </div>
-          </div>
-
-          <div className="relative">
-             <div
-               ref={categorySliderRef}
-               className="category-slider flex gap-8 overflow-x-auto scrollbar-hide px-4 py-4"
-               style={{ scrollBehavior: "smooth" }}
-             >
-              {/* All Categories Button */}
-              <button
-                onClick={() => handleCategorySelect("all")}
-                className={`category-circle flex-shrink-0 flex flex-col items-center justify-center w-28 h-28 rounded-full transition-all duration-300 border-4 ${
-                  activeCategory === "all"
-                    ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white scale-110 border-indigo-300"
-                    : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-700 hover:from-gray-100 hover:to-gray-200 hover:scale-105 border-gray-200 hover:border-indigo-200"
-                }`}
-              >
-                <Package className="h-10 w-10 mb-2" />
-                <span className="text-sm font-semibold text-center leading-tight">
-                  الكل
-                </span>
+                <SlidersHorizontal className="h-4 w-4" />
+                <span>فلاتر</span>
+                {activeFiltersCount > 0 && (
+                  <span className="bg-indigo-600 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {activeFiltersCount}
+                  </span>
+                )}
               </button>
 
-              {/* Dynamic Categories */}
-              {categories.map((category) => (
+              {/* Clear Filters */}
+              {activeFiltersCount > 0 && (
                 <button
-                  key={category._id}
-                  onClick={() => handleCategorySelect(category._id)}
-                  className={`category-circle flex-shrink-0 flex flex-col items-center justify-center w-28 h-28 rounded-full transition-all duration-300 border-4 ${
-                    activeCategory === category._id
-                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white scale-110 border-indigo-300"
-                      : "bg-gradient-to-br from-gray-50 to-gray-100 text-gray-700 hover:from-gray-100 hover:to-gray-200 hover:scale-105 border-gray-200 hover:border-indigo-200"
+                  onClick={clearFilters}
+                  className="flex items-center gap-1.5 px-3 py-2 text-red-600 bg-red-50 rounded-xl text-sm font-medium hover:bg-red-100 transition-all"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">مسح الفلاتر</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Results count */}
+              <span className="hidden sm:block text-sm text-slate-500">
+                {pagination?.totalProducts || 0} منتج
+              </span>
+
+              {/* Sort Dropdown */}
+              <div className="relative group">
+                <button className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-sm font-medium hover:bg-slate-100 transition-all">
+                  <Filter className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">{currentSortLabel}</span>
+                  <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
+                </button>
+                <div className="absolute end-0 top-full mt-1 w-48 bg-white border border-slate-100 rounded-xl shadow-lg shadow-slate-200/50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 overflow-hidden">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        const [sb, so] = option.value.split("-");
+                        setSortBy(sb);
+                        setSortOrder(so);
+                        setCurrentPage(1);
+                      }}
+                      className={`w-full text-right px-4 py-2.5 text-sm transition-colors ${
+                        `${sortBy}-${sortOrder}` === option.value
+                          ? "bg-indigo-50 text-indigo-700 font-semibold"
+                          : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === "grid"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-slate-400 hover:text-slate-600"
                   }`}
                 >
-                  <span className="text-sm font-semibold text-center leading-tight px-1">
-                    {category.name}
-                  </span>
+                  <Grid className="h-4 w-4" />
                 </button>
-              ))}
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-2 rounded-lg transition-all ${
+                    viewMode === "list"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  <List className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-       {/* Sort and Filter Bar */}
-       <div className="bg-white border-b border-gray-200">
-         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-           <div className="flex flex-wrap items-center justify-between gap-4">
-             <div className="flex items-center gap-4">
-               {/* Desktop Filter Button */}
-               <button
-                 onClick={() => setShowFilters(!showFilters)}
-                 className="hidden lg:flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-               >
-                 <Filter className="h-4 w-4 text-gray-700" />
-                 <span className="text-gray-700">الفلاتر</span>
-                 <ChevronDown
-                   className={`h-4 w-4 text-gray-700 transition-transform ${
-                     showFilters ? "rotate-180" : ""
-                   }`}
-                 />
-               </button>
+      {/* ── Main Content ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex gap-8">
+          {/* Desktop Sidebar Filters */}
+          <div className="hidden lg:block w-72 flex-shrink-0">
+            <div className="bg-white rounded-2xl border border-slate-100 p-6 sticky top-[180px]">
+              <div className="flex items-center gap-2 mb-6">
+                <SlidersHorizontal className="h-4 w-4 text-slate-500" />
+                <h3 className="text-base font-bold text-slate-900">الفلاتر</h3>
+              </div>
 
-               {/* Mobile Filter Button */}
-               <button
-                 onClick={() => setMobileFiltersOpen(true)}
-                 className="lg:hidden flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-colors"
-               >
-                 <Filter className="h-4 w-4" />
-                 <span>الفلاتر</span>
-               </button>
+              {/* Category */}
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold text-slate-800 mb-3">الفئة</h4>
+                <div className="space-y-1.5">
+                  <button
+                    onClick={() => handleCategorySelect("all")}
+                    className={`w-full text-right px-3 py-2 rounded-xl text-sm transition-all ${
+                      selectedCategory === "all"
+                        ? "bg-indigo-50 text-indigo-700 font-semibold"
+                        : "text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    جميع الفئات
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat._id}
+                      onClick={() => handleCategorySelect(cat._id)}
+                      className={`w-full text-right px-3 py-2 rounded-xl text-sm transition-all ${
+                        selectedCategory === cat._id
+                          ? "bg-indigo-50 text-indigo-700 font-semibold"
+                          : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-               {(searchTerm ||
-                 selectedCategory !== "all" ||
-                 minPrice ||
-                 maxPrice) && (
-                 <button
-                   onClick={clearFilters}
-                   className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                 >
-                   <X className="h-4 w-4" />
-                   <span>مسح الكل</span>
-                 </button>
-               )}
-             </div>
+              <div className="border-t border-slate-100 my-5" />
 
-             <div className="flex items-center gap-4">
-               <div className="hidden sm:flex items-center gap-2 text-sm text-gray-600">
-                 <span>
-                   عرض {products.length} من {pagination?.totalProducts || 0} منتج
-                 </span>
-               </div>
+              {/* Price Range */}
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold text-slate-800 mb-3">نطاق السعر</h4>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    value={minPrice}
+                    onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
+                    placeholder="من"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                  />
+                  <span className="text-slate-400 text-sm">-</span>
+                  <input
+                    type="number"
+                    value={maxPrice}
+                    onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
+                    placeholder="إلى"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                  />
+                </div>
+              </div>
 
-               <select
-                 value={`${sortBy}-${sortOrder}`}
-                 onChange={(e) => {
-                   const [newSortBy, newSortOrder] = e.target.value.split('-');
-                   setSortBy(newSortBy);
-                   setSortOrder(newSortOrder);
-                   setCurrentPage(1);
-                 }}
-                 className="px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-               >
-                 <option value="createdAt-desc">الأحدث</option>
-                 <option value="createdAt-asc">الأقدم</option>
-                 <option value="name-asc">الاسم أ-ي</option>
-                 <option value="name-desc">الاسم ي-أ</option>
-                 <option value="price-asc">السعر من الأقل</option>
-                 <option value="price-desc">السعر من الأعلى</option>
-               </select>
-             </div>
-           </div>
-         </div>
-       </div>
+              <div className="border-t border-slate-100 my-5" />
 
-       {/* Main Content with Sidebar */}
-       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-         <div className="flex gap-8">
-           {/* Desktop Filters Sidebar */}
-           <div className="hidden lg:block w-80 flex-shrink-0">
-             <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-8">
-               <h3 className="text-xl font-bold text-gray-900 mb-6 text-right">الفلاتر</h3>
-               
-               {/* Category Filter */}
-               <div className="mb-6">
-                 <h4 className="text-sm font-semibold text-gray-800 mb-3 text-right">الفئة</h4>
-                 <select
-                   value={selectedCategory}
-                   onChange={(e) => {
-                     setSelectedCategory(e.target.value);
-                     setCurrentPage(1);
-                   }}
-                   className="w-full p-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm"
-                 >
-                   <option value="all">جميع الفئات</option>
-                   {categories.map((category) => (
-                     <option key={category._id} value={category._id}>
-                       {category.name}
-                     </option>
-                   ))}
-                 </select>
-               </div>
+              {/* Sort */}
+              <div>
+                <h4 className="text-sm font-semibold text-slate-800 mb-3">الترتيب</h4>
+                <div className="space-y-1">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        const [sb, so] = option.value.split("-");
+                        setSortBy(sb);
+                        setSortOrder(so);
+                        setCurrentPage(1);
+                      }}
+                      className={`w-full text-right px-3 py-2 rounded-xl text-sm transition-all ${
+                        `${sortBy}-${sortOrder}` === option.value
+                          ? "bg-indigo-50 text-indigo-700 font-semibold"
+                          : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-               {/* Price Range */}
-               <div className="mb-6">
-                 <h4 className="text-sm font-semibold text-gray-800 mb-3 text-right">نطاق السعر</h4>
-                 <div className="space-y-3">
-                   <input
-                     type="number"
-                     value={minPrice}
-                     onChange={(e) => {
-                       setMinPrice(e.target.value);
-                       setCurrentPage(1);
-                     }}
-                     placeholder="الحد الأدنى"
-                     className="w-full p-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm"
-                   />
-                   <input
-                     type="number"
-                     value={maxPrice}
-                     onChange={(e) => {
-                       setMaxPrice(e.target.value);
-                       setCurrentPage(1);
-                     }}
-                     placeholder="الحد الأعلى"
-                     className="w-full p-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm"
-                   />
-                 </div>
-               </div>
+              {activeFiltersCount > 0 && (
+                <>
+                  <div className="border-t border-slate-100 my-5" />
+                  <button
+                    onClick={clearFilters}
+                    className="w-full px-4 py-2.5 text-sm text-red-600 bg-red-50 rounded-xl hover:bg-red-100 font-medium transition-all"
+                  >
+                    مسح جميع الفلاتر
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
 
-               {/* Clear Filters */}
-               {(searchTerm ||
-                 selectedCategory !== "all" ||
-                 minPrice ||
-                 maxPrice) && (
-                 <button
-                   onClick={clearFilters}
-                   className="w-full px-4 py-3 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 text-center font-medium transition-colors"
-                 >
-                   مسح الفلاتر
-                 </button>
-               )}
-             </div>
-           </div>
+          {/* Products */}
+          <div className="flex-1 min-w-0">
+            {/* Loading Skeleton */}
+            {loading ? (
+              <div className={`grid ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" : "grid-cols-1 gap-4"}`}>
+                {[...Array(12)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+                    <div className="h-44 bg-slate-100 animate-shimmer" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-3 bg-slate-100 rounded w-1/3 animate-shimmer" />
+                      <div className="h-4 bg-slate-100 rounded animate-shimmer" />
+                      <div className="h-3 bg-slate-100 rounded w-3/4 animate-shimmer" />
+                      <div className="h-8 bg-slate-100 rounded w-1/3 animate-shimmer" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : products.length === 0 ? (
+              /* Empty State */
+              <div className="text-center py-20">
+                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                  <ShoppingBag className="h-10 w-10 text-slate-300" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">
+                  لا توجد منتجات
+                </h3>
+                <p className="text-slate-500 mb-6 max-w-sm mx-auto">
+                  جرب تغيير معايير البحث أو الفلاتر لعرض المنتجات
+                </p>
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-all"
+                >
+                  <X className="h-4 w-4" />
+                  مسح الفلاتر
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className={`grid ${viewMode === "grid" ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" : "grid-cols-1 gap-4"}`}>
+                  {products.map((product) => (
+                    <ProductCard
+                      key={product._id}
+                      product={product}
+                      cartItems={cartItems}
+                      onAddToCart={addToCart}
+                      onUpdateQuantity={(product, quantity) => {
+                        const currentCart = JSON.parse(localStorage.getItem("maktabati_cart") || "[]");
+                        const newItems = currentCart.map((item: CartItem) =>
+                          item.product._id === product._id ? { ...item, quantity } : item
+                        );
+                        updateCartInStorage(newItems);
+                      }}
+                      onRemoveFromCart={(product) => {
+                        const currentCart = JSON.parse(localStorage.getItem("maktabati_cart") || "[]");
+                        const newItems = currentCart.filter((item: CartItem) => item.product._id !== product._id);
+                        updateCartInStorage(newItems);
+                      }}
+                      className={viewMode === "list" ? "flex flex-col sm:flex-row max-w-none" : ""}
+                      compact={true}
+                    />
+                  ))}
+                </div>
 
-           {/* Products Grid */}
-           <div className="flex-1 w-full lg:w-auto">
-             {loading ? (
-               <div
-                 className={`grid mobile-product-grid ${
-                   viewMode === "grid"
-                     ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4"
-                     : "grid-cols-1 gap-4"
-                 }`}
-               >
-                 {[...Array(20)].map((_, index) => (
-                   <div
-                     key={index}
-                     className="bg-white rounded-xl shadow-sm overflow-hidden animate-pulse border border-gray-100"
-                   >
-                     <div className="h-32 bg-gradient-to-br from-gray-200 to-gray-300"></div>
-                     <div className="p-3">
-                       <div className="h-3 bg-gray-200 rounded mb-2"></div>
-                       <div className="h-3 bg-gray-200 rounded w-3/4 mb-2"></div>
-                       <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             ) : products.length === 0 ? (
-               <div className="text-center py-20">
-                 <div className="bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                   <Package className="h-10 w-10 text-indigo-600" />
-                 </div>
-                 <h3 className="text-xl font-bold text-gray-900 mb-4">
-                   لا توجد منتجات
-                 </h3>
-                 <p className="text-gray-600 mb-8">
-                   جرب تغيير معايير البحث أو الفلاتر
-                 </p>
-                 <button
-                   onClick={clearFilters}
-                   className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-xl font-semibold hover:shadow-lg transition-all duration-300"
-                 >
-                   مسح الفلاتر
-                 </button>
-               </div>
-             ) : (
-               <>
-               <div
-                 className={`grid mobile-product-grid ${
-                   viewMode === "grid"
-                     ? "grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4"
-                     : "grid-cols-1 gap-4"
-                 }`}
-               >
-                   {products.map((product) => (
-                     <div
-                       key={product._id}
-                       className="transform hover:scale-105 transition-transform duration-300 mobile-product-card"
-                     >
-                       <ProductCard
-                         product={product}
-                         cartItems={cartItems}
-                         onAddToCart={addToCart}
-                         onUpdateQuantity={(product, quantity) => {
-                           // Update quantity in cart
-                           setCartItems((prevItems) => {
-                             const newItems = prevItems.map((item) =>
-                               item.product._id === product._id
-                                 ? { ...item, quantity }
-                                 : item
-                             );
-                             updateCartInStorage(newItems);
-                             return newItems;
-                           });
-                         }}
-                         onRemoveFromCart={(product) => {
-                           // Remove from cart
-                           setCartItems((prevItems) => {
-                             const newItems = prevItems.filter(
-                               (item) => item.product._id !== product._id
-                             );
-                             updateCartInStorage(newItems);
-                             return newItems;
-                           });
-                         }}
-                         className={
-                           viewMode === "list"
-                             ? "flex flex-col sm:flex-row max-w-none shadow-lg rounded-xl"
-                             : "shadow-lg rounded-xl border border-gray-100"
-                         }
-                         compact={true}
-                       />
-                     </div>
-                   ))}
-                 </div>
+                {/* Pagination */}
+                {pagination && pagination.totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-10 gap-4 pt-6 border-t border-slate-100">
+                    <p className="text-sm text-slate-500 text-center sm:text-right">
+                      صفحة <span className="font-semibold text-slate-900">{currentPage}</span> من{" "}
+                      <span className="font-semibold text-slate-900">{pagination.totalPages}</span>{" "}
+                      ({pagination.totalProducts} منتج)
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={!pagination.hasNext}
+                        className="flex items-center gap-1 px-4 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium transition-all"
+                      >
+                        <span>التالي</span>
+                        <ChevronLeft className="h-4 w-4 text-slate-600" />
+                      </button>
 
-                 {/* Pagination */}
-                 {pagination && pagination.totalPages > 1 && (
-                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-12 gap-4">
-                     <div className="text-sm text-gray-700 text-center sm:text-left font-medium">
-                       عرض {products.length} من أصل {pagination.totalProducts} منتج
-                     </div>
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                          const pageNumber = Math.max(1, Math.min(pagination.totalPages - 4, currentPage - 2)) + i;
+                          if (pageNumber > pagination.totalPages) return null;
+                          return (
+                            <button
+                              key={pageNumber}
+                              onClick={() => setCurrentPage(pageNumber)}
+                              className={`w-9 h-9 rounded-xl font-medium text-sm transition-all ${
+                                pageNumber === currentPage
+                                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                              }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
+                        })}
+                      </div>
 
-                     <div className="flex items-center justify-center gap-2">
-                       <button
-                         onClick={() => setCurrentPage(currentPage - 1)}
-                         disabled={!pagination.hasPrev}
-                         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-all duration-200"
-                       >
-                         <ChevronRight className="h-4 w-4 text-indigo-600" />
-                         <span className="hidden sm:inline text-gray-700">السابق</span>
-                       </button>
+                      <button
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={!pagination.hasPrev}
+                        className="flex items-center gap-1 px-4 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-medium transition-all"
+                      >
+                        <ChevronRight className="h-4 w-4 text-slate-600" />
+                        <span>السابق</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
 
-                       <div className="flex items-center gap-1">
-                         {Array.from(
-                           { length: Math.min(5, pagination.totalPages) },
-                           (_, i) => {
-                             const pageNumber =
-                               Math.max(
-                                 1,
-                                 Math.min(pagination.totalPages - 4, currentPage - 2)
-                               ) + i;
-                             if (pageNumber > pagination.totalPages) return null;
+      {/* ── Mobile Filter Modal ── */}
+      {mobileFiltersOpen && (
+        <div className="fixed inset-0 z-[60]" dir="rtl">
+          <div
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setMobileFiltersOpen(false)}
+          />
+          <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl max-h-[80vh] overflow-y-auto animate-slide-up">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <h3 className="text-lg font-bold text-slate-900">الفلاتر</h3>
+              <button
+                onClick={() => setMobileFiltersOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
 
-                             return (
-                               <button
-                                 key={pageNumber}
-                                 onClick={() => setCurrentPage(pageNumber)}
-                                 className={`px-3 py-2 rounded-lg font-medium transition-all duration-200 text-sm ${
-                                   pageNumber === currentPage
-                                     ? "bg-indigo-600 text-white shadow-md"
-                                     : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                                 }`}
-                               >
-                                 {pageNumber}
-                               </button>
-                             );
-                           }
-                         )}
-                       </div>
+            {/* Content */}
+            <div className="px-5 py-6 space-y-6">
+              {/* Category */}
+              <div>
+                <h4 className="text-sm font-semibold text-slate-800 mb-3">الفئة</h4>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => handleCategorySelect("all")}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                      selectedCategory === "all"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-slate-50 text-slate-600 border border-slate-200"
+                    }`}
+                  >
+                    الكل
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat._id}
+                      onClick={() => handleCategorySelect(cat._id)}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                        selectedCategory === cat._id
+                          ? "bg-indigo-600 text-white"
+                          : "bg-slate-50 text-slate-600 border border-slate-200"
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-                       <button
-                         onClick={() => setCurrentPage(currentPage + 1)}
-                         disabled={!pagination.hasNext}
-                         className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-all duration-200"
-                       >
-                         <span className="hidden sm:inline text-gray-700">التالي</span>
-                         <ChevronRight className="h-4 w-4 rotate-180 text-indigo-600" />
-                       </button>
-                     </div>
-                   </div>
-                 )}
-               </>
-             )}
-           </div>
-         </div>
-       </div>
+              {/* Price */}
+              <div>
+                <h4 className="text-sm font-semibold text-slate-800 mb-3">نطاق السعر</h4>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    value={minPrice}
+                    onChange={(e) => { setMinPrice(e.target.value); setCurrentPage(1); }}
+                    placeholder="من"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                  />
+                  <span className="text-slate-400">-</span>
+                  <input
+                    type="number"
+                    value={maxPrice}
+                    onChange={(e) => { setMaxPrice(e.target.value); setCurrentPage(1); }}
+                    placeholder="إلى"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all"
+                  />
+                </div>
+              </div>
 
-       {/* Mobile Filter Modal */}
-       {mobileFiltersOpen && (
-         <div className="fixed inset-0 z-50 flex items-end justify-center">
-           {/* Background overlay */}
-           <div
-             className="absolute inset-0 bg-gray-500 bg-opacity-75"
-             onClick={() => setMobileFiltersOpen(false)}
-           ></div>
+              {/* Sort */}
+              <div>
+                <h4 className="text-sm font-semibold text-slate-800 mb-3">الترتيب</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        const [sb, so] = option.value.split("-");
+                        setSortBy(sb);
+                        setSortOrder(so);
+                        setCurrentPage(1);
+                      }}
+                      className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-center ${
+                        `${sortBy}-${sortOrder}` === option.value
+                          ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                          : "bg-slate-50 text-slate-600 border border-slate-200"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-           {/* Modal panel */}
-           <div className="relative w-full max-w-lg bg-white rounded-t-2xl shadow-xl max-h-[80vh] overflow-y-auto">
-             {/* Modal header */}
-             <div className="px-6 py-4 border-b border-gray-200">
-               <div className="flex items-center justify-between">
-                 <h3 className="text-lg font-semibold text-gray-900">الفلاتر</h3>
-                 <button
-                   onClick={() => setMobileFiltersOpen(false)}
-                   className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                 >
-                   <X className="h-6 w-6" />
-                 </button>
-               </div>
-             </div>
+              {activeFiltersCount > 0 && (
+                <button
+                  onClick={() => {
+                    clearFilters();
+                    setMobileFiltersOpen(false);
+                  }}
+                  className="w-full px-4 py-3 text-sm text-red-600 bg-red-50 rounded-xl hover:bg-red-100 font-medium transition-all"
+                >
+                  مسح جميع الفلاتر
+                </button>
+              )}
+            </div>
 
-             {/* Modal content */}
-             <div className="px-6 py-6">
-               {/* Category Filter */}
-               <div className="mb-6">
-                 <h4 className="text-sm font-semibold text-gray-800 mb-3 text-right">الفئة</h4>
-                 <select
-                   value={selectedCategory}
-                   onChange={(e) => {
-                     setSelectedCategory(e.target.value);
-                     setCurrentPage(1);
-                   }}
-                   className="w-full p-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm"
-                 >
-                   <option value="all">جميع الفئات</option>
-                   {categories.map((category) => (
-                     <option key={category._id} value={category._id}>
-                       {category.name}
-                     </option>
-                   ))}
-                 </select>
-               </div>
-
-               {/* Price Range */}
-               <div className="mb-6">
-                 <h4 className="text-sm font-semibold text-gray-800 mb-3 text-right">نطاق السعر</h4>
-                 <div className="space-y-3">
-                   <input
-                     type="number"
-                     value={minPrice}
-                     onChange={(e) => {
-                       setMinPrice(e.target.value);
-                       setCurrentPage(1);
-                     }}
-                     placeholder="الحد الأدنى"
-                     className="w-full p-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm"
-                   />
-                   <input
-                     type="number"
-                     value={maxPrice}
-                     onChange={(e) => {
-                       setMaxPrice(e.target.value);
-                       setCurrentPage(1);
-                     }}
-                     placeholder="الحد الأعلى"
-                     className="w-full p-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm"
-                   />
-                 </div>
-               </div>
-
-               {/* Sort Options */}
-               <div className="mb-6">
-                 <h4 className="text-sm font-semibold text-gray-800 mb-3 text-right">الترتيب حسب</h4>
-                 <select
-                   value={`${sortBy}-${sortOrder}`}
-                   onChange={(e) => {
-                     const [newSortBy, newSortOrder] = e.target.value.split('-');
-                     setSortBy(newSortBy);
-                     setSortOrder(newSortOrder);
-                     setCurrentPage(1);
-                   }}
-                   className="w-full p-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 shadow-sm"
-                 >
-                   <option value="createdAt-desc">الأحدث</option>
-                   <option value="createdAt-asc">الأقدم</option>
-                   <option value="name-asc">الاسم أ-ي</option>
-                   <option value="name-desc">الاسم ي-أ</option>
-                   <option value="price-asc">السعر من الأقل</option>
-                   <option value="price-desc">السعر من الأعلى</option>
-                 </select>
-               </div>
-
-               {/* Clear Filters */}
-               {(searchTerm ||
-                 selectedCategory !== "all" ||
-                 minPrice ||
-                 maxPrice) && (
-                 <button
-                   onClick={() => {
-                     clearFilters();
-                     setMobileFiltersOpen(false);
-                   }}
-                   className="w-full px-4 py-3 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50 text-center font-medium transition-colors mb-4"
-                 >
-                   مسح الفلاتر
-                 </button>
-               )}
-             </div>
-
-             {/* Modal footer */}
-             <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-               <button
-                 onClick={() => setMobileFiltersOpen(false)}
-                 className="w-full bg-indigo-600 text-white py-3 px-4 rounded-xl font-medium hover:bg-indigo-700 transition-colors"
-               >
-                 تطبيق الفلاتر
-               </button>
-             </div>
-           </div>
-         </div>
-       )}
-
-       {/* Footer */}
-     </div>
-   );
- }
+            {/* Footer */}
+            <div className="px-5 py-4 border-t border-slate-100 bg-slate-50 sticky bottom-0">
+              <button
+                onClick={() => setMobileFiltersOpen(false)}
+                className="w-full py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-all"
+              >
+                عرض النتائج ({pagination?.totalProducts || 0})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

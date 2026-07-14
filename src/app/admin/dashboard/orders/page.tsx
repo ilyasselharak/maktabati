@@ -13,6 +13,11 @@ import {
   ChevronRight,
   ChevronLeft,
   SlidersHorizontal,
+  X,
+  Clock,
+  CheckCircle2,
+  Truck,
+  Ban,
 } from "lucide-react";
 
 interface OrderItem {
@@ -36,13 +41,7 @@ interface Order {
   items: OrderItem[];
   totalAmount: number;
   totalItems: number;
-  status:
-    | "pending"
-    | "confirmed"
-    | "processing"
-    | "shipped"
-    | "delivered"
-    | "cancelled";
+  status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled";
   createdAt: string;
   updatedAt: string;
 }
@@ -60,22 +59,13 @@ interface Pagination {
   hasPrev: boolean;
 }
 
-const statusColors = {
-  pending: "bg-yellow-100 text-yellow-800",
-  confirmed: "bg-blue-100 text-blue-800",
-  processing: "bg-purple-100 text-purple-800",
-  shipped: "bg-indigo-100 text-indigo-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-red-100 text-red-800",
-};
-
-const statusLabels = {
-  pending: "في الانتظار",
-  confirmed: "مؤكد",
-  processing: "قيد المعالجة",
-  shipped: "تم الشحن",
-  delivered: "تم التسليم",
-  cancelled: "ملغي",
+const statusConfig = {
+  pending: { label: "في الانتظار", class: "bg-amber-50 text-amber-700 border-amber-100", icon: Clock },
+  confirmed: { label: "مؤكد", class: "bg-blue-50 text-blue-700 border-blue-100", icon: CheckCircle2 },
+  processing: { label: "قيد المعالجة", class: "bg-purple-50 text-purple-700 border-purple-100", icon: RefreshCw },
+  shipped: { label: "تم الشحن", class: "bg-indigo-50 text-indigo-700 border-indigo-100", icon: Truck },
+  delivered: { label: "تم التسليم", class: "bg-emerald-50 text-emerald-700 border-emerald-100", icon: CheckCircle2 },
+  cancelled: { label: "ملغي", class: "bg-red-50 text-red-700 border-red-100", icon: Ban },
 };
 
 export default function OrdersPage() {
@@ -93,28 +83,19 @@ export default function OrdersPage() {
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  useEffect(() => { fetchCategories(); }, []);
 
   const fetchOrders = useCallback(async () => {
+    setIsLoading(true);
     try {
       const token = localStorage.getItem("adminToken");
       const params = new URLSearchParams({
-        page: currentPage.toString(),
-        search: searchTerm,
-        status: selectedStatus,
-        category: selectedCategory,
-        sortBy,
-        sortOrder,
+        page: currentPage.toString(), search: searchTerm, status: selectedStatus,
+        category: selectedCategory, sortBy, sortOrder,
       });
-
       const response = await fetch(`/api/orders?${params}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.ok) {
         const data = await response.json();
         setOrders(data.orders);
@@ -125,36 +106,16 @@ export default function OrdersPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [
-    currentPage,
-    searchTerm,
-    selectedStatus,
-    selectedCategory,
-    sortBy,
-    sortOrder,
-  ]);
+  }, [currentPage, searchTerm, selectedStatus, selectedCategory, sortBy, sortOrder]);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [
-    currentPage,
-    searchTerm,
-    selectedStatus,
-    selectedCategory,
-    sortBy,
-    sortOrder,
-    fetchOrders,
-  ]);
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const fetchCategories = async () => {
     try {
       const response = await fetch("/api/admin/categories");
-
       if (response.ok) {
         const data = await response.json();
         setCategories(data.categories);
-      } else {
-        console.error("Failed to fetch categories:", response.status);
       }
     } catch (error) {
       console.error("Error fetching categories:", error);
@@ -162,12 +123,8 @@ export default function OrdersPage() {
   };
 
   const clearFilters = () => {
-    setSearchTerm("");
-    setSelectedStatus("");
-    setSelectedCategory("");
-    setSortBy("createdAt");
-    setSortOrder("desc");
-    setCurrentPage(1);
+    setSearchTerm(""); setSelectedStatus(""); setSelectedCategory("");
+    setSortBy("createdAt"); setSortOrder("desc"); setCurrentPage(1);
   };
 
   const handleViewOrder = (order: Order) => {
@@ -175,27 +132,16 @@ export default function OrdersPage() {
     setShowOrderDetails(true);
   };
 
-  const handleStatusChange = async (
-    orderId: string,
-    newStatus: Order["status"]
-  ) => {
+  const handleStatusChange = async (orderId: string, newStatus: Order["status"]) => {
     try {
       const token = localStorage.getItem("adminToken");
       const response = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: newStatus }),
       });
-
       if (response.ok) {
-        setOrders(
-          orders.map((order) =>
-            order._id === orderId ? { ...order, status: newStatus } : order
-          )
-        );
+        setOrders(orders.map((o) => o._id === orderId ? { ...o, status: newStatus } : o));
         if (selectedOrder && selectedOrder._id === orderId) {
           setSelectedOrder({ ...selectedOrder, status: newStatus });
         }
@@ -207,57 +153,39 @@ export default function OrdersPage() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("ar-MA", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
     });
   };
 
-  if (isLoading) {
-    return (
-      <DashboardLayout title="إدارة الطلبات">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <RefreshCw className="h-8 w-8 animate-spin text-indigo-600 mx-auto mb-4" />
-            <p className="text-gray-600">جاري تحميل الطلبات...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout title="إدارة الطلبات">
-      <div className="min-h-screen bg-gray-50" dir="rtl">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-2xl border border-slate-100 p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">الطلبات</h2>
-              <p className="text-gray-600 mt-1">
-                إدارة ومراقبة جميع الطلبات (
-                {pagination?.totalOrders || orders.length} طلب)
+              <h2 className="text-2xl font-bold text-slate-900">الطلبات</h2>
+              <p className="text-slate-500 text-sm mt-1">
+                إدارة ومراقبة جميع الطلبات ({pagination?.totalOrders || orders.length} طلب)
               </p>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center px-4 py-2 border rounded-lg transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
                   showFilters
                     ? "bg-indigo-50 border-indigo-200 text-indigo-600"
-                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                    : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
                 }`}
               >
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                <SlidersHorizontal className="h-4 w-4" />
                 الفلاتر
               </button>
               <button
                 onClick={fetchOrders}
-                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-all hover:shadow-lg hover:shadow-indigo-600/20"
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="h-4 w-4" />
                 تحديث
               </button>
             </div>
@@ -266,294 +194,201 @@ export default function OrdersPage() {
 
         <div className="flex gap-6">
           {/* Filters Sidebar */}
-          <div
-            className={`w-80 transition-all duration-300 ${
-              showFilters ? "block" : "hidden"
-            } lg:block`}
-          >
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                الفلاتر
-              </h3>
+          <div className={`${showFilters ? "block" : "hidden"} lg:block w-72 shrink-0`}>
+            <div className="bg-white rounded-2xl border border-slate-100 p-5 sticky top-24">
+              <h3 className="text-base font-bold text-slate-900 mb-4">الفلاتر</h3>
 
-              {/* Search */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  البحث
-                </label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="رقم الطلب، اسم العميل، رقم الهاتف..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                  />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-2">البحث</label>
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="رقم الطلب، اسم العميل..."
+                      value={searchTerm}
+                      onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                      className="w-full pr-10 pl-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Status Filter */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  حالة الطلب
-                </label>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => {
-                    setSelectedStatus(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                >
-                  <option value="">جميع الحالات</option>
-                  <option value="pending">في الانتظار</option>
-                  <option value="confirmed">مؤكد</option>
-                  <option value="processing">قيد المعالجة</option>
-                  <option value="shipped">تم الشحن</option>
-                  <option value="delivered">تم التسليم</option>
-                  <option value="cancelled">ملغي</option>
-                </select>
-              </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-2">حالة الطلب</label>
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => { setSelectedStatus(e.target.value); setCurrentPage(1); }}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all"
+                  >
+                    <option value="">جميع الحالات</option>
+                    {Object.entries(statusConfig).map(([key, cfg]) => (
+                      <option key={key} value={key}>{cfg.label}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Category Filter */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الفئة
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                >
-                  <option value="">جميع الفئات</option>
-                  {categories.map((category) => (
-                    <option key={category._id} value={category._id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-2">الترتيب</label>
+                  <select
+                    value={`${sortBy}-${sortOrder}`}
+                    onChange={(e) => {
+                      const [sb, so] = e.target.value.split("-");
+                      setSortBy(sb); setSortOrder(so); setCurrentPage(1);
+                    }}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all"
+                  >
+                    <option value="createdAt-desc">الأحدث أولاً</option>
+                    <option value="createdAt-asc">الأقدم أولاً</option>
+                    <option value="totalAmount-desc">المبلغ: الأعلى</option>
+                    <option value="totalAmount-asc">المبلغ: الأقل</option>
+                  </select>
+                </div>
 
-              {/* Sort Options */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  الترتيب حسب
-                </label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 mb-2"
-                >
-                  <option value="createdAt">التاريخ</option>
-                  <option value="totalAmount">المبلغ</option>
-                  <option value="orderId">رقم الطلب</option>
-                </select>
-                <select
-                  value={sortOrder}
-                  onChange={(e) => {
-                    setSortOrder(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                >
-                  <option value="desc">تنازلي</option>
-                  <option value="asc">تصاعدي</option>
-                </select>
+                {(searchTerm || selectedStatus || selectedCategory || sortBy !== "createdAt" || sortOrder !== "desc") && (
+                  <button
+                    onClick={clearFilters}
+                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                    مسح الفلاتر
+                  </button>
+                )}
               </div>
-
-              {/* Clear Filters */}
-              {(searchTerm ||
-                selectedStatus ||
-                selectedCategory ||
-                sortBy !== "createdAt" ||
-                sortOrder !== "desc") && (
-                <button
-                  onClick={clearFilters}
-                  className="w-full px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
-                >
-                  مسح جميع الفلاتر
-                </button>
-              )}
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="flex-1">
-            {/* Orders Grid */}
+          <div className="flex-1 min-w-0">
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, index) => (
-                  <div
-                    key={index}
-                    className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse"
-                  >
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-2xl border border-slate-100 p-6 animate-pulse">
+                    <div className="h-4 bg-slate-100 rounded-lg mb-3 w-1/3" />
+                    <div className="h-4 bg-slate-100 rounded-lg mb-4 w-3/4" />
+                    <div className="h-3 bg-slate-100 rounded-lg w-1/2" />
                   </div>
                 ))}
               </div>
             ) : orders.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  لا توجد طلبات
-                </h3>
-                <p className="text-gray-600">
-                  {searchTerm || selectedStatus || selectedCategory
-                    ? "لا توجد طلبات تطابق معايير البحث"
-                    : "لم يتم العثور على أي طلبات"}
+              <div className="bg-white rounded-2xl border border-slate-100 p-16 text-center">
+                <div className="bg-slate-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-5">
+                  <Package className="h-8 w-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">لا توجد طلبات</h3>
+                <p className="text-slate-500 text-sm">
+                  {searchTerm || selectedStatus ? "لا توجد طلبات تطابق معايير البحث" : "لم يتم العثور على أي طلبات"}
                 </p>
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {orders.map((order) => (
-                    <div
-                      key={order._id}
-                      className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-200"
-                    >
-                      {/* Order Header */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            #{order.orderId}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {formatDate(order.createdAt)}
-                          </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                  {orders.map((order) => {
+                    const cfg = statusConfig[order.status];
+                    const StatusIcon = cfg.icon;
+                    return (
+                      <div key={order._id} className="bg-white rounded-2xl border border-slate-100 p-5 hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-200 transition-all duration-300">
+                        {/* Header */}
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="text-base font-bold text-slate-900">#{order.orderId}</h3>
+                            <p className="text-xs text-slate-400 mt-0.5">{formatDate(order.createdAt)}</p>
+                          </div>
+                          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold ${cfg.class}`}>
+                            <StatusIcon className="h-3 w-3" />
+                            {cfg.label}
+                          </div>
                         </div>
+
+                        {/* Customer */}
+                        <div className="bg-slate-50 rounded-xl p-3 mb-4 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <User className="h-3.5 w-3.5 text-slate-400" />
+                            <span className="text-sm font-semibold text-slate-900">{order.customer.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-3.5 w-3.5 text-slate-400" />
+                            <span className="text-sm text-slate-600">{order.customer.phone}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                            <span className="text-sm text-slate-600">{order.customer.city}</span>
+                          </div>
+                        </div>
+
+                        {/* Summary */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <p className="text-xs text-slate-400">المنتجات</p>
+                            <p className="text-lg font-bold text-slate-900">{order.totalItems}</p>
+                          </div>
+                          <div className="text-left">
+                            <p className="text-xs text-slate-400">المجموع</p>
+                            <p className="text-xl font-bold text-indigo-600">{order.totalAmount.toFixed(2)} <span className="text-xs font-normal text-slate-400">د.م.</span></p>
+                          </div>
+                        </div>
+
+                        {/* Status Change */}
                         <select
                           value={order.status}
-                          onChange={(e) =>
-                            handleStatusChange(
-                              order._id,
-                              e.target.value as Order["status"]
-                            )
-                          }
-                          className={`px-2 py-1 text-xs font-medium rounded-full border-0 ${
-                            statusColors[order.status]
-                          }`}
+                          onChange={(e) => handleStatusChange(order._id, e.target.value as Order["status"])}
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all mb-3"
                         >
-                          <option value="pending">في الانتظار</option>
-                          <option value="confirmed">مؤكد</option>
-                          <option value="processing">قيد المعالجة</option>
-                          <option value="shipped">تم الشحن</option>
-                          <option value="delivered">تم التسليم</option>
-                          <option value="cancelled">ملغي</option>
+                          {Object.entries(statusConfig).map(([key, cfg]) => (
+                            <option key={key} value={key}>{cfg.label}</option>
+                          ))}
                         </select>
-                      </div>
 
-                      {/* Customer Info */}
-                      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center mb-2">
-                          <User className="h-4 w-4 text-gray-400 ml-2" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {order.customer.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center">
-                          <Phone className="h-4 w-4 text-gray-400 ml-2" />
-                          <span className="text-sm text-gray-900">
-                            {order.customer.phone}
-                          </span>
-                        </div>
-                        <div className="flex items-center mt-1">
-                          <MapPin className="h-4 w-4 text-gray-400 ml-2" />
-                          <span className="text-sm text-gray-900">
-                            {order.customer.city}
-                          </span>
-                        </div>
+                        <button
+                          onClick={() => handleViewOrder(order)}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-all"
+                        >
+                          <Eye className="h-4 w-4" />
+                          عرض التفاصيل
+                        </button>
                       </div>
-
-                      {/* Order Summary */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="text-right">
-                          <p className="text-sm text-gray-600">عدد المنتجات</p>
-                          <p className="text-lg font-semibold text-gray-900">
-                            {order.totalItems}
-                          </p>
-                        </div>
-                        <div className="text-left">
-                          <p className="text-sm text-gray-600">
-                            المبلغ الإجمالي
-                          </p>
-                          <p className="text-xl font-bold text-indigo-600">
-                            {order.totalAmount.toFixed(2)} د.م.
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <button
-                        onClick={() => handleViewOrder(order)}
-                        className="w-full flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        عرض التفاصيل
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Pagination */}
                 {pagination && pagination.totalPages > 1 && (
-                  <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="mt-8 bg-white rounded-2xl border border-slate-100 p-5">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div className="text-sm text-gray-700 text-center sm:text-right">
+                      <p className="text-sm text-slate-500 text-center sm:text-right">
                         عرض {orders.length} من أصل {pagination.totalOrders} طلب
-                      </div>
-
+                      </p>
                       <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => setCurrentPage(currentPage - 1)}
                           disabled={!pagination.hasPrev}
-                          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                          className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 text-sm font-medium transition-all"
                         >
                           <ChevronRight className="h-4 w-4" />
                           السابق
                         </button>
-
                         <div className="flex items-center gap-1">
-                          {Array.from(
-                            { length: Math.min(5, pagination.totalPages) },
-                            (_, i) => {
-                              const pageNumber =
-                                Math.max(1, currentPage - 2) + i;
-                              if (pageNumber > pagination.totalPages)
-                                return null;
-
-                              return (
-                                <button
-                                  key={pageNumber}
-                                  onClick={() => setCurrentPage(pageNumber)}
-                                  className={`px-3 py-2 rounded-lg text-sm font-medium ${
-                                    pageNumber === currentPage
-                                      ? "bg-indigo-600 text-white"
-                                      : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                                  }`}
-                                >
-                                  {pageNumber}
-                                </button>
-                              );
-                            }
-                          )}
+                          {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                            const pageNumber = Math.max(1, Math.min(pagination.totalPages - 4, currentPage - 2)) + i;
+                            if (pageNumber > pagination.totalPages) return null;
+                            return (
+                              <button
+                                key={pageNumber}
+                                onClick={() => setCurrentPage(pageNumber)}
+                                className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
+                                  pageNumber === currentPage
+                                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                                    : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                }`}
+                              >
+                                {pageNumber}
+                              </button>
+                            );
+                          })}
                         </div>
-
                         <button
                           onClick={() => setCurrentPage(currentPage + 1)}
                           disabled={!pagination.hasNext}
-                          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                          className="flex items-center gap-1.5 px-3.5 py-2 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 disabled:opacity-40 text-sm font-medium transition-all"
                         >
                           التالي
                           <ChevronLeft className="h-4 w-4" />
@@ -569,141 +404,86 @@ export default function OrdersPage() {
 
         {/* Order Details Modal */}
         {showOrderDetails && selectedOrder && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900">
-                      تفاصيل الطلب #{selectedOrder.orderId}
-                    </h3>
-                    <p className="text-gray-600 mt-1">
-                      {formatDate(selectedOrder.createdAt)}
-                    </p>
+                    <h3 className="text-xl font-bold text-slate-900">تفاصيل الطلب #{selectedOrder.orderId}</h3>
+                    <p className="text-sm text-slate-400 mt-1">{formatDate(selectedOrder.createdAt)}</p>
                   </div>
                   <button
                     onClick={() => setShowOrderDetails(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
                   >
-                    ✕
+                    <X className="h-5 w-5" />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Customer Information */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 text-right">
-                      معلومات العميل
-                    </h4>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+                  <div className="bg-slate-50 rounded-2xl p-5">
+                    <h4 className="text-sm font-bold text-slate-900 mb-4">معلومات العميل</h4>
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">
-                          {selectedOrder.customer.name}
-                        </span>
-                        <div className="flex items-center">
-                          <span className="text-gray-900 mr-2">الاسم:</span>
-                          <User className="h-5 w-5 text-gray-400" />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">
-                          {selectedOrder.customer.city}
-                        </span>
-                        <div className="flex items-center">
-                          <span className="text-gray-900 mr-2">المدينة:</span>
-                          <MapPin className="h-5 w-5 text-gray-400" />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900">
-                          {selectedOrder.customer.phone}
-                        </span>
-                        <div className="flex items-center">
-                          <span className="text-gray-900 mr-2">الهاتف:</span>
-                          <Phone className="h-5 w-5 text-gray-400" />
-                        </div>
-                      </div>
+                      {[
+                        { label: "الاسم", value: selectedOrder.customer.name, icon: User },
+                        { label: "المدينة", value: selectedOrder.customer.city, icon: MapPin },
+                        { label: "الهاتف", value: selectedOrder.customer.phone, icon: Phone },
+                      ].map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <div key={item.label} className="flex items-center justify-between">
+                            <span className="font-semibold text-sm text-slate-900">{item.value}</span>
+                            <div className="flex items-center gap-1.5 text-slate-400">
+                              <span className="text-xs">{item.label}</span>
+                              <Icon className="h-4 w-4" />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* Order Summary */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4 text-right">
-                      ملخص الطلب
-                    </h4>
+                  <div className="bg-slate-50 rounded-2xl p-5">
+                    <h4 className="text-sm font-bold text-slate-900 mb-4">ملخص الطلب</h4>
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="font-medium text-gray-900">
-                          {selectedOrder.totalItems}
-                        </span>
-                        <span className="text-gray-900">عدد المنتجات:</span>
+                        <span className="font-semibold text-sm text-slate-900">{selectedOrder.totalItems}</span>
+                        <span className="text-xs text-slate-500">عدد المنتجات</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-medium text-lg text-gray-900">
-                          {selectedOrder.totalAmount.toFixed(2)} د.م.
-                        </span>
-                        <span className="text-gray-900">المبلغ الإجمالي:</span>
+                        <span className="font-bold text-lg text-slate-900">{selectedOrder.totalAmount.toFixed(2)} د.م.</span>
+                        <span className="text-xs text-slate-500">المبلغ الإجمالي</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span
-                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            statusColors[selectedOrder.status]
-                          }`}
-                        >
-                          {statusLabels[selectedOrder.status]}
+                      <div className="flex justify-between items-center">
+                        <span className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold ${statusConfig[selectedOrder.status].class}`}>
+                          {statusConfig[selectedOrder.status].label}
                         </span>
-                        <span className="text-gray-900">الحالة:</span>
+                        <span className="text-xs text-slate-500">الحالة</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Order Items */}
-                <div className="mt-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4 text-right">
-                    المنتجات المطلوبة
-                  </h4>
-                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                {/* Items Table */}
+                <div className="mb-6">
+                  <h4 className="text-sm font-bold text-slate-900 mb-3">المنتجات المطلوبة</h4>
+                  <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden">
                     <table className="w-full">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-slate-50">
                         <tr>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase">
-                            المجموع
-                          </th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase">
-                            الكمية
-                          </th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase">
-                            السعر
-                          </th>
-                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-900 uppercase">
-                            المنتج
-                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase">المنتج</th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase">السعر</th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase">الكمية</th>
+                          <th className="px-4 py-3 text-right text-xs font-bold text-slate-500 uppercase">المجموع</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-200">
+                      <tbody className="divide-y divide-slate-50">
                         {selectedOrder.items.map((item, index) => (
                           <tr key={index}>
-                            <td className="px-4 py-3 text-right">
-                              <div className="text-sm font-medium text-gray-900">
-                                {item.total.toFixed(2)} د.م.
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <div className="text-sm text-gray-900">
-                                {item.quantity}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <div className="text-sm text-gray-900">
-                                {item.price.toFixed(2)} د.م.
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <div className="text-sm font-medium text-gray-900">
-                                {item.name}
-                              </div>
-                            </td>
+                            <td className="px-4 py-3 text-right text-sm font-semibold text-slate-900">{item.name}</td>
+                            <td className="px-4 py-3 text-right text-sm text-slate-600">{item.price.toFixed(2)} د.م.</td>
+                            <td className="px-4 py-3 text-right text-sm text-slate-600">{item.quantity}</td>
+                            <td className="px-4 py-3 text-right text-sm font-bold text-slate-900">{item.total.toFixed(2)} د.م.</td>
                           </tr>
                         ))}
                       </tbody>
@@ -711,30 +491,21 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
-                {/* Status Update */}
-                <div className="mt-6 flex justify-start space-x-3">
+                <div className="flex justify-end gap-3">
                   <button
                     onClick={() => setShowOrderDetails(false)}
-                    className="px-4 py-2 bg-gray-100 text-gray-900 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-all"
                   >
                     إغلاق
                   </button>
                   <select
                     value={selectedOrder.status}
-                    onChange={(e) =>
-                      handleStatusChange(
-                        selectedOrder._id,
-                        e.target.value as Order["status"]
-                      )
-                    }
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    onChange={(e) => handleStatusChange(selectedOrder._id, e.target.value as Order["status"])}
+                    className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all"
                   >
-                    <option value="pending">في الانتظار</option>
-                    <option value="confirmed">مؤكد</option>
-                    <option value="processing">قيد المعالجة</option>
-                    <option value="shipped">تم الشحن</option>
-                    <option value="delivered">تم التسليم</option>
-                    <option value="cancelled">ملغي</option>
+                    {Object.entries(statusConfig).map(([key, cfg]) => (
+                      <option key={key} value={key}>{cfg.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>

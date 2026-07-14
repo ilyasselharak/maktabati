@@ -4,48 +4,49 @@ export interface IProduct extends Document {
   name: string;
   description: string;
   price: number;
+  category: mongoose.Types.ObjectId;
   images: string[];
-  category: Schema.Types.ObjectId;
   stock: number;
   isActive: boolean;
   tags: string[];
-  slug?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const ProductSchema = new Schema(
+const ProductSchema: Schema = new Schema(
   {
     name: {
       type: String,
       required: true,
       trim: true,
+      maxlength: 100,
     },
     description: {
       type: String,
       required: true,
       trim: true,
+      maxlength: 1000,
     },
     price: {
       type: Number,
       required: true,
       min: 0,
     },
-    images: [
-      {
-        type: String,
-      },
-    ],
     category: {
       type: Schema.Types.ObjectId,
       ref: "Category",
       required: true,
     },
+    images: [
+      {
+        type: String,
+        required: true,
+      },
+    ],
     stock: {
       type: Number,
-      required: true,
-      min: 0,
       default: 0,
+      min: 0,
     },
     isActive: {
       type: Boolean,
@@ -55,26 +56,19 @@ const ProductSchema = new Schema(
       {
         type: String,
         trim: true,
+        maxlength: 50,
       },
     ],
-    slug: {
-      type: String,
-      unique: true,
-      sparse: true,
-      index: true,
-      trim: true,
-    },
   },
   {
     timestamps: true,
   }
 );
 
-ProductSchema.index({ name: 1 });
+// Add indexes for better performance
 ProductSchema.index({ category: 1 });
-ProductSchema.index({ isActive: 1 });
-ProductSchema.index({ createdAt: -1 });
-ProductSchema.index({ price: 1 });
+ProductSchema.index({ name: "text", description: "text" });
+ProductSchema.index({ tags: 1 });
 
 export default mongoose.models.Product ||
   mongoose.model<IProduct>("Product", ProductSchema);

@@ -1,91 +1,73 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import DashboardLayout from "../../../components/DashboardLayout";
-import { ArrowLeft, Check, AlertTriangle, Loader2 } from "lucide-react";
+import {
+  ArrowRight,
+  Save,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  FolderOpen,
+} from "lucide-react";
 
 interface Category {
   _id: string;
   name: string;
   description?: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export default function EditCategoryPage() {
   const params = useParams();
-  const categoryId = params.id as string;
+  const router = useRouter();
+  const [category, setCategory] = useState<Category | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
     description: "",
   });
-  const [originalData, setOriginalData] = useState<Category | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   const fetchCategory = useCallback(async () => {
     try {
-      // You would typically have a separate API endpoint to get a single category
-      // For now, we'll fetch all categories and find the one we need
       const token = localStorage.getItem("adminToken");
       const response = await fetch("/api/admin/categories", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await response.json();
-
       if (response.ok) {
-        const category = data.categories.find(
-          (cat: Category) => cat._id === categoryId
-        );
-        if (category) {
-          setOriginalData(category);
+        const data = await response.json();
+        const cat = data.categories.find((c: Category) => c._id === params.id);
+        if (cat) {
+          setCategory(cat);
           setFormData({
-            name: category.name,
-            description: category.description || "",
+            name: cat.name,
+            description: cat.description || "",
           });
-        } else {
-          setError("الفئة غير موجودة");
         }
-      } else {
-        setError(data.error || "فشل في تحميل الفئة");
       }
     } catch (error) {
-      console.error("Error fetching category:", error);
-      setError("فشل في تحميل الفئة");
+      console.error("فشل في جلب الفئة:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [categoryId]);
+  }, [params.id]);
 
   useEffect(() => {
-    if (categoryId) {
-      fetchCategory();
-    }
-  }, [categoryId, fetchCategory]);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+    fetchCategory();
+  }, [fetchCategory]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
 
-    setIsSubmitting(true);
+    setIsSaving(true);
     setError("");
+    setSuccess("");
 
     try {
       const token = localStorage.getItem("adminToken");
@@ -95,20 +77,14 @@ export default function EditCategoryPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          id: categoryId,
-          ...formData,
-        }),
+        body: JSON.stringify({ ...formData, id: params.id }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess(true);
-        setOriginalData((prev) => (prev ? { ...prev, ...formData } : null));
-        setTimeout(() => {
-          window.location.href = "/admin/dashboard/categories";
-        }, 2000);
+        setSuccess("تم تحديث الفئة بنجاح");
+        setTimeout(() => router.push("/admin/dashboard/categories/manage"), 1500);
       } else {
         setError(data.error || "حدث خطأ أثناء تحديث الفئة");
       }
@@ -116,69 +92,35 @@ export default function EditCategoryPage() {
       console.error("Error updating category:", error);
       setError("حدث خطأ أثناء تحديث الفئة");
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
-  };
-
-  const hasChanges = () => {
-    if (!originalData) return false;
-    return (
-      formData.name !== originalData.name ||
-      formData.description !== (originalData.description || "")
-    );
   };
 
   if (isLoading) {
     return (
-      <DashboardLayout title="تحميل...">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  if (error && !originalData) {
-    return (
-      <DashboardLayout title="خطأ">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-            <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-red-900 mb-2">
-              خطأ في تحميل الفئة
-            </h2>
-            <p className="text-red-700 mb-4">{error}</p>
-            <Link
-              href="/admin/dashboard/categories"
-              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              العودة إلى الفئات
-            </Link>
+      <DashboardLayout title="تعديل الفئة">
+        <div className="flex items-center justify-center py-20">
+          <div className="relative w-14 h-14">
+            <div className="absolute inset-0 border-4 border-indigo-100 rounded-full" />
+            <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin" />
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  if (success) {
+  if (!category) {
     return (
-      <DashboardLayout title="تم التحديث">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-            <Check className="h-12 w-12 text-green-600 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-green-900 mb-2">
-              تم تحديث الفئة بنجاح!
-            </h2>
-            <p className="text-green-700 mb-4">
-              سيتم توجيهك إلى صفحة الفئات خلال ثوانٍ...
-            </p>
-            <Link
-              href="/admin/dashboard/categories"
-              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              العودة إلى الفئات
-            </Link>
+      <DashboardLayout title="تعديل الفئة">
+        <div className="text-center py-20">
+          <div className="bg-slate-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-5">
+            <FolderOpen className="h-8 w-8 text-slate-400" />
           </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">الفئة غير موجودة</h3>
+          <Link href="/admin/dashboard/categories/manage" className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-all">
+            <ArrowRight className="h-5 w-5" />
+            العودة
+          </Link>
         </div>
       </DashboardLayout>
     );
@@ -186,141 +128,83 @@ export default function EditCategoryPage() {
 
   return (
     <DashboardLayout title="تعديل الفئة">
-      <div className="space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Link
-              href="/admin/dashboard/categories"
-              className="flex items-center text-gray-600 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-5 w-5 ml-2" />
-              العودة
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">تعديل الفئة</h1>
-              <p className="text-gray-600 mt-1">تعديل بيانات الفئة المحددة</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <Link href="/admin/dashboard/categories/manage" className="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">
+            <ArrowRight className="h-5 w-5" />
+          </Link>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">تعديل الفئة</h2>
+            <p className="text-sm text-slate-500 mt-0.5">تحديث معلومات الفئة</p>
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
+          <div className="bg-red-50 border border-red-100 text-red-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0" />
             {error}
           </div>
         )}
 
-        {/* Current Category Info */}
-        {originalData && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-blue-900 mb-2">
-              معلومات الفئة الحالية:
-            </h3>
-            <div className="text-sm text-blue-800">
-              <p>
-                <strong>الاسم:</strong> {originalData.name}
-              </p>
-              <p>
-                <strong>الوصف:</strong>{" "}
-                {originalData.description || "لا يوجد وصف"}
-              </p>
-              <p>
-                <strong>تاريخ الإنشاء:</strong>{" "}
-                {new Date(originalData.createdAt).toLocaleDateString("ar-SA")}
-              </p>
-            </div>
+        {success && (
+          <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-3 rounded-xl flex items-center gap-2 text-sm">
+            <CheckCircle className="h-4 w-4 shrink-0" />
+            {success}
           </div>
         )}
 
-        {/* Form */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  اسم الفئة *
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-black"
-                  placeholder="مثال: الكتب المدرسية"
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  أدخل اسم الفئة بشكل واضح ومفهوم
-                </p>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  وصف الفئة
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={4}
-                  value={formData.description}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-black"
-                  placeholder="وصف تفصيلي للفئة والمنتجات التي تحتوي عليها..."
-                />
-                <p className="mt-1 text-sm text-gray-500">
-                  وصف اختياري لمساعدة العملاء في فهم محتوى الفئة
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
-                <Link
-                  href="/admin/dashboard/categories"
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  إلغاء
-                </Link>
-                <button
-                  type="submit"
-                  disabled={
-                    isSubmitting || !formData.name.trim() || !hasChanges()
-                  }
-                  className="px-4 py-2 bg-indigo-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? "جاري التحديث..." : "تحديث الفئة"}
-                </button>
-              </div>
-            </form>
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-100 p-6 space-y-6">
+          <div>
+            <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-2">
+              اسم الفئة *
+            </label>
+            <input
+              type="text"
+              id="name"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 focus:bg-white transition-all"
+              placeholder="مثال: الكتب المدرسية"
+            />
           </div>
-        </div>
 
-        {/* Changes Summary */}
-        {hasChanges() && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-yellow-900 mb-2">
-              التغييرات المكتشفة:
-            </h3>
-            <ul className="text-sm text-yellow-800 space-y-1">
-              {formData.name !== originalData?.name && (
-                <li>
-                  • تم تغيير الاسم من &quot;{originalData?.name}&quot; إلى
-                  &quot;{formData.name}&quot;
-                </li>
-              )}
-              {formData.description !== (originalData?.description || "") && (
-                <li>• تم تعديل الوصف</li>
-              )}
-            </ul>
+          <div>
+            <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-2">
+              الوصف
+            </label>
+            <textarea
+              id="description"
+              rows={4}
+              value={formData.description}
+              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 focus:bg-white transition-all"
+              placeholder="وصف مختصر للفئة..."
+            />
           </div>
-        )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
+            <Link
+              href="/admin/dashboard/categories/manage"
+              className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-medium hover:bg-slate-200 transition-all"
+            >
+              إلغاء
+            </Link>
+            <button
+              type="submit"
+              disabled={isSaving || !formData.name.trim()}
+              className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/20 transition-all disabled:opacity-50"
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              حفظ التغييرات
+            </button>
+          </div>
+        </form>
       </div>
     </DashboardLayout>
   );

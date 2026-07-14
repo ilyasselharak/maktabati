@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home,
   Package,
   BarChart3,
   Settings,
@@ -15,6 +14,8 @@ import {
   List,
   Tag,
   ShoppingCart,
+  ChevronLeft,
+  LayoutDashboard,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -23,26 +24,14 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  {
-    name: "لوحة التحكم",
-    href: "/admin/dashboard",
-    icon: Home,
-  },
+  { name: "لوحة التحكم", href: "/admin/dashboard", icon: LayoutDashboard },
   {
     name: "المنتجات",
     href: "/admin/dashboard/products",
     icon: Package,
     subItems: [
-      {
-        name: "جميع المنتجات",
-        href: "/admin/dashboard/products",
-        icon: List,
-      },
-      {
-        name: "إضافة منتج",
-        href: "/admin/dashboard/products/add",
-        icon: PlusCircle,
-      },
+      { name: "جميع المنتجات", href: "/admin/dashboard/products", icon: List },
+      { name: "إضافة منتج", href: "/admin/dashboard/products/add", icon: PlusCircle },
     ],
   },
   {
@@ -50,21 +39,9 @@ const menuItems = [
     href: "/admin/dashboard/categories",
     icon: BookOpen,
     subItems: [
-      {
-        name: "جميع الفئات",
-        href: "/admin/dashboard/categories",
-        icon: List,
-      },
-      {
-        name: "إضافة فئة",
-        href: "/admin/dashboard/categories/add",
-        icon: PlusCircle,
-      },
-      {
-        name: "إدارة الفئات",
-        href: "/admin/dashboard/categories/manage",
-        icon: Tag,
-      },
+      { name: "جميع الفئات", href: "/admin/dashboard/categories", icon: List },
+      { name: "إضافة فئة", href: "/admin/dashboard/categories/add", icon: PlusCircle },
+      { name: "إدارة الفئات", href: "/admin/dashboard/categories/manage", icon: Tag },
     ],
   },
   {
@@ -72,28 +49,16 @@ const menuItems = [
     href: "/admin/dashboard/orders",
     icon: ShoppingCart,
     subItems: [
-      {
-        name: "جميع الطلبات",
-        href: "/admin/dashboard/orders",
-        icon: List,
-      },
+      { name: "جميع الطلبات", href: "/admin/dashboard/orders", icon: List },
     ],
   },
-  {
-    name: "التحليلات",
-    href: "/admin/dashboard/analytics",
-    icon: BarChart3,
-  },
-  {
-    name: "الإعدادات",
-    href: "/admin/dashboard/settings",
-    icon: Settings,
-  },
+  { name: "التحليلات", href: "/admin/dashboard/analytics", icon: BarChart3 },
+  { name: "الإعدادات", href: "/admin/dashboard/settings", icon: Settings },
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [expandedItems, setExpandedItems] = useState<string[]>(["المنتجات", "الفئات", "الطلبات"]);
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems((prev) =>
@@ -119,39 +84,46 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div
+      <aside
         className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
-        lg:translate-x-0 lg:static lg:inset-0
-        ${isOpen ? "translate-x-0" : "-translate-x-full"}
-      `}
+          fixed inset-y-0 right-0 z-50 w-72 bg-white border-l border-slate-200 shadow-xl shadow-slate-200/50
+          transform transition-transform duration-300 ease-out
+          lg:translate-x-0 lg:static lg:inset-0 lg:shadow-none lg:border-l
+          ${isOpen ? "translate-x-0" : "translate-x-full"}
+        `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center space-x-2">
-            <BookOpen className="h-8 w-8 text-indigo-600" />
-            <span className="text-xl font-bold text-gray-900">مكتبتي</span>
-          </div>
+        <div className="flex items-center justify-between p-5 border-b border-slate-100">
+          <Link href="/admin/dashboard" className="flex items-center gap-2.5 group">
+            <div className="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-600/20">
+              <BookOpen className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <span className="text-lg font-bold text-slate-900 tracking-tight block leading-none">مكتبتي</span>
+              <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">لوحة الإدارة</span>
+            </div>
+          </Link>
           <button
             onClick={() => setIsOpen(false)}
-            className="p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 lg:hidden"
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg lg:hidden transition-colors"
           >
-            <X className="h-6 w-6" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+        <nav className="px-3 py-5 space-y-1 overflow-y-auto h-[calc(100%-180px)]">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isExpanded = expandedItems.includes(item.name);
             const hasSubItems = item.subItems && item.subItems.length > 0;
+            const activeParent = isParentActive(item.name);
 
             return (
               <div key={item.name}>
@@ -159,56 +131,44 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                   <button
                     onClick={() => toggleExpanded(item.name)}
                     className={`
-                      w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200
-                      ${
-                        isParentActive(item.name)
-                          ? "bg-indigo-50 text-indigo-700 border-r-2 border-indigo-700"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200
+                      ${activeParent
+                        ? "bg-indigo-50 text-indigo-700"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       }
                     `}
                   >
-                    <div className="flex items-center space-x-3">
-                      <Icon className="h-5 w-5" />
+                    <div className="flex items-center gap-3">
+                      <div className={`p-1.5 rounded-lg transition-colors ${activeParent ? "bg-indigo-100" : "bg-slate-100"}`}>
+                        <Icon className={`h-4 w-4 ${activeParent ? "text-indigo-600" : "text-slate-500"}`} />
+                      </div>
                       <span>{item.name}</span>
                     </div>
-                    <svg
-                      className={`h-4 w-4 transition-transform ${
-                        isExpanded ? "rotate-90" : ""
-                      }`}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
+                    <ChevronLeft className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "-rotate-90" : ""}`} />
                   </button>
                 ) : (
                   <Link
                     href={item.href}
                     onClick={() => setIsOpen(false)}
                     className={`
-                      flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200
-                      ${
-                        isActive(item.href)
-                          ? "bg-indigo-50 text-indigo-700 border-r-2 border-indigo-700"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200
+                      ${isActive(item.href)
+                        ? "bg-indigo-50 text-indigo-700"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                       }
                     `}
                   >
-                    <Icon className="h-5 w-5" />
+                    <div className={`p-1.5 rounded-lg transition-colors ${isActive(item.href) ? "bg-indigo-100" : "bg-slate-100"}`}>
+                      <Icon className={`h-4 w-4 ${isActive(item.href) ? "text-indigo-600" : "text-slate-500"}`} />
+                    </div>
                     <span>{item.name}</span>
                   </Link>
                 )}
 
                 {/* Sub-items */}
                 {hasSubItems && isExpanded && (
-                  <div className="ml-6 mt-1 space-y-1">
-                    {item.subItems.map((subItem) => {
+                  <div className="mr-9 mt-1 space-y-0.5 border-r-2 border-slate-100 pr-3">
+                    {item.subItems!.map((subItem) => {
                       const SubIcon = subItem.icon;
                       return (
                         <Link
@@ -216,15 +176,14 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                           href={subItem.href}
                           onClick={() => setIsOpen(false)}
                           className={`
-                            flex items-center space-x-3 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200
-                            ${
-                              isActive(subItem.href)
-                                ? "bg-indigo-50 text-indigo-700"
-                                : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                            flex items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-all duration-200
+                            ${isActive(subItem.href)
+                              ? "bg-indigo-50 text-indigo-700 font-semibold"
+                              : "text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                             }
                           `}
                         >
-                          <SubIcon className="h-4 w-4" />
+                          <SubIcon className={`h-3.5 w-3.5 ${isActive(subItem.href) ? "text-indigo-600" : "text-slate-400"}`} />
                           <span>{subItem.name}</span>
                         </Link>
                       );
@@ -237,16 +196,18 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-4">
+        <div className="absolute bottom-0 right-0 left-0 border-t border-slate-100 p-3 bg-white">
           <button
             onClick={handleLogout}
-            className="flex items-center space-x-3 w-full px-3 py-2 text-sm font-medium text-gray-600 rounded-md hover:bg-gray-50 hover:text-gray-900 transition-colors duration-200"
+            className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium text-slate-500 rounded-xl hover:bg-red-50 hover:text-red-600 transition-all duration-200"
           >
-            <LogOut className="h-5 w-5" />
+            <div className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-100 transition-colors">
+              <LogOut className="h-4 w-4" />
+            </div>
             <span>تسجيل الخروج</span>
           </button>
         </div>
-      </div>
+      </aside>
     </>
   );
 }

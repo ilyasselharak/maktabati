@@ -11,7 +11,7 @@ export async function GET() {
       isActive: true,
       images: { $exists: true, $ne: [] },
     })
-      .populate("category", "name")
+      .populate("category", "name slug")
       .sort({ createdAt: -1 })
       .limit(12);
 

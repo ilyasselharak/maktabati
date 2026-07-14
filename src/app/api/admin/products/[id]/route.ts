@@ -109,7 +109,7 @@ export async function PATCH(
         updatedAt: new Date(),
       },
       { new: true }
-    ).populate("category", "name");
+    ).populate("category", "name slug");
 
     return NextResponse.json({
       message: "تم تحديث المنتج بنجاح",

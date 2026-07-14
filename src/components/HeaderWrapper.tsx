@@ -17,7 +17,6 @@ export default function HeaderWrapper() {
   const [cartCount, setCartCount] = useState(0);
   const pathname = usePathname();
 
-  // Load cart from localStorage on component mount
   useEffect(() => {
     const loadCart = () => {
       const savedCart = localStorage.getItem("maktabati_cart");
@@ -37,25 +36,21 @@ export default function HeaderWrapper() {
     };
 
     loadCart();
-
-    // Listen for cart updates from other components
-    const handleCartUpdate = () => {
-      loadCart();
-    };
-
+    const handleCartUpdate = () => loadCart();
     window.addEventListener('cartUpdated', handleCartUpdate);
-
-    return () => {
-      window.removeEventListener('cartUpdated', handleCartUpdate);
-    };
+    return () => window.removeEventListener('cartUpdated', handleCartUpdate);
   }, []);
 
   return (
-    <Header
-      cartCount={cartCount}
-      mobileMenuOpen={mobileMenuOpen}
-      onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
-      currentPage={pathname}
-    />
+    <>
+      <Header
+        cartCount={cartCount}
+        mobileMenuOpen={mobileMenuOpen}
+        onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+        currentPage={pathname}
+      />
+      {/* Spacer for fixed header */}
+      {/* <div className="h-16" /> */}
+    </>
   );
 }

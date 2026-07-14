@@ -3,13 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, BookOpen } from "lucide-react";
+import { Eye, EyeOff, BookOpen, ShieldCheck, Lock, Mail, AlertCircle } from "lucide-react";
 
 export default function AdminLoginPage() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -19,18 +16,13 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-
     try {
       const response = await fetch("/api/admin/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         localStorage.setItem("adminToken", data.token);
         router.push("/admin/dashboard");
@@ -45,43 +37,39 @@ export default function AdminLoginPage() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <div className="text-center">
-            <div className="flex justify-center">
-              <BookOpen className="h-12 w-12 text-indigo-600" />
-            </div>
-            <h2 className="mt-6 text-3xl font-bold text-gray-900">
-              دخول المدير
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              قم بتسجيل الدخول إلى حسابك الإداري
-            </p>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Logo & Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-xl shadow-indigo-600/20 mb-4">
+            <BookOpen className="h-8 w-8 text-white" />
           </div>
+          <h2 className="text-2xl font-bold text-slate-900">دخول المدير</h2>
+          <p className="text-sm text-slate-500 mt-1">
+            قم بتسجيل الدخول إلى لوحة إدارة مكتبتي
+          </p>
+        </div>
 
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 p-8">
+          {error && (
+            <div className="mb-5 bg-red-50 border border-red-100 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error}
+            </div>
+          )}
 
-            <div className="space-y-4">
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  البريد الإلكتروني
-                </label>
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
+                البريد الإلكتروني
+              </label>
+              <div className="relative">
+                <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                 <input
                   id="email"
                   name="email"
@@ -90,65 +78,72 @@ export default function AdminLoginPage() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="mt-1 block text-black w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full text-black pr-11 pl-4 py-3 bg-slate-50 border border-slate-200 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 focus:bg-white transition-all text-sm"
                   placeholder="admin@example.com"
                 />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  كلمة المرور
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="mt-1 block text-black w-full px-3 py-2 pl-10 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="أدخل كلمة المرور"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 left-0 pl-3 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-gray-400" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-gray-400" />
-                    )}
-                  </button>
-                </div>
               </div>
             </div>
 
             <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
-              </button>
+              <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-2">
+                كلمة المرور
+              </label>
+              <div className="relative">
+                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="block w-full text-black pr-11 pl-11 py-3 bg-slate-50 border border-slate-200 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 focus:bg-white transition-all text-sm"
+                  placeholder="أدخل كلمة المرور"
+                />
+                <button
+                  type="button"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
-            <div className="text-center">
-              <Link
-                href="/admin/auth/register"
-                className="text-sm text-indigo-600 hover:text-indigo-500"
-              >
-                ليس لديك حساب؟ سجل هنا
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                <span className="text-sm text-slate-500">تذكرني</span>
+              </label>
+              <Link href="#" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                نسيت كلمة المرور؟
               </Link>
             </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <div className="animate-spin h-5 w-5 border-b-2 border-white rounded-full" />
+              ) : (
+                <>
+                  <ShieldCheck className="h-5 w-5" />
+                  تسجيل الدخول
+                </>
+              )}
+            </button>
           </form>
         </div>
+
+        <p className="text-center text-sm text-slate-500 mt-6">
+          ليس لديك حساب؟{" "}
+          <Link href="/admin/auth/register" className="text-indigo-600 hover:text-indigo-700 font-semibold">
+            سجل هنا
+          </Link>
+        </p>
       </div>
     </div>
   );
