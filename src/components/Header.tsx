@@ -330,7 +330,7 @@ export default function Header({
                             onClick={handleSearchSubmit}
                             className="w-full text-center text-xs text-indigo-600 font-medium hover:text-indigo-700 transition-colors"
                           >
-                            البحث عن "{searchQuery}" في جميع المنتجات
+                            البحث عن &quot;{searchQuery}&quot; في جميع المنتجات
                           </button>
                         </div>
                       </div>

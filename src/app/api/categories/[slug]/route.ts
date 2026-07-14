@@ -13,7 +13,7 @@ export async function GET(
     const resolvedParams = await params;
     const slug = resolvedParams.slug;
 
-    let category = await Category.findOne({ slug });
+    const category = await Category.findOne({ slug });
 
     if (!category) {
       return NextResponse.json(

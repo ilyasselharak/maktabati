@@ -201,7 +201,7 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
               <div className="relative group">
                 <select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
+                  onChange={(e) => setSortBy(e.target.value as "newest" | "price-asc" | "price-desc" | "name")}
                   className="px-3 py-2 bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 transition-all cursor-pointer"
                 >
                   <option value="newest">الأحدث</option>
