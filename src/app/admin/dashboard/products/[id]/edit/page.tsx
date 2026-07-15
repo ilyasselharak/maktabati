@@ -8,7 +8,6 @@ import DashboardLayout from "../../../components/DashboardLayout";
 import {
   ArrowRight,
   Save,
-  Upload,
   X,
   AlertCircle,
   CheckCircle,
@@ -20,19 +19,6 @@ import { slugify } from "../../../../../../lib/utils/slugify";
 interface Category {
   _id: string;
   name: string;
-}
-
-interface Product {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  images: string[];
-  category: string;
-  stock: number;
-  isActive: boolean;
-  tags: string[];
-  slug?: string;
 }
 
 export default function EditProductPage() {

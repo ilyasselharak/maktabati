@@ -56,6 +56,7 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
   useEffect(() => {
     fetchCategory();
     loadCart();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   const loadCart = () => {

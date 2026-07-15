@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   MapPin,
   Phone,
@@ -12,7 +11,6 @@ import {
   Check,
   Facebook,
   Instagram,
-  ArrowLeft,
   Headphones,
   BookOpen,
 } from "lucide-react";

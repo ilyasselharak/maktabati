@@ -13,7 +13,6 @@ interface CartItem {
 
 export default function HeaderWrapper() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [cartCount, setCartCount] = useState(0);
   const pathname = usePathname();
 
@@ -23,7 +22,6 @@ export default function HeaderWrapper() {
       if (savedCart) {
         try {
           const parsedCart = JSON.parse(savedCart);
-          setCartItems(parsedCart);
           const totalCount = parsedCart.reduce(
             (total: number, item: CartItem) => total + item.quantity,
             0

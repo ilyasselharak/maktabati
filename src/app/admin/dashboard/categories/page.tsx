@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import DashboardLayout from "../components/DashboardLayout";
+import Image from "next/image";
 import {
   Plus,
   Search,
@@ -437,9 +438,11 @@ export default function CategoriesPage() {
                 </label>
                 {formData.image ? (
                   <div className="relative inline-block">
-                    <img
+                    <Image
                       src={formData.image}
                       alt="صورة الفئة"
+                      width={128}
+                      height={128}
                       className="h-32 w-32 object-cover rounded-lg border border-gray-200"
                     />
                     <button
@@ -548,9 +551,11 @@ export default function CategoriesPage() {
                 </label>
                 {formData.image ? (
                   <div className="relative inline-block">
-                    <img
+                    <Image
                       src={formData.image}
                       alt="صورة الفئة"
+                      width={128}
+                      height={128}
                       className="h-32 w-32 object-cover rounded-lg border border-gray-200"
                     />
                     <button

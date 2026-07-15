@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import DashboardLayout from "../../components/DashboardLayout";
 import {
@@ -8,14 +8,10 @@ import {
   Plus,
   Edit,
   Trash2,
-  Package,
   AlertTriangle,
   Check,
-  X,
   BarChart3,
-  TrendingUp,
   ShoppingBag,
-  ArrowRight,
   FolderOpen,
   Grid3x3,
   Loader2,

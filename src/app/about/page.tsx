@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  BookOpen,
   Target,
   Eye,
   Users,
@@ -10,7 +9,6 @@ import {
   Heart,
   Phone,
   Mail,
-  ArrowLeft,
   ShoppingBag,
   Truck,
   Shield,

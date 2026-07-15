@@ -46,11 +46,6 @@ interface Order {
   updatedAt: string;
 }
 
-interface Category {
-  _id: string;
-  name: string;
-}
-
 interface Pagination {
   currentPage: number;
   totalPages: number;
@@ -70,7 +65,6 @@ const statusConfig = {
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -82,8 +76,6 @@ export default function OrdersPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState("desc");
-
-  useEffect(() => { fetchCategories(); }, []);
 
   const fetchOrders = useCallback(async () => {
     setIsLoading(true);
@@ -109,18 +101,6 @@ export default function OrdersPage() {
   }, [currentPage, searchTerm, selectedStatus, selectedCategory, sortBy, sortOrder]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch("/api/admin/categories");
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data.categories);
-      }
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
 
   const clearFilters = () => {
     setSearchTerm(""); setSelectedStatus(""); setSelectedCategory("");

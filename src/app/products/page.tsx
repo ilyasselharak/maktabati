@@ -7,13 +7,11 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Package,
   Grid,
   List,
   X,
   Filter,
   SlidersHorizontal,
-  ArrowLeft,
   ShoppingBag,
 } from "lucide-react";
 import ProductCard from "@/components/ProductCard";

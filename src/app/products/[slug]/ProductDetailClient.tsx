@@ -21,7 +21,6 @@ import {
   Store,
   Info,
   CircleCheck,
-  ChevronDown,
 } from "lucide-react";
 
 interface Product {
@@ -80,6 +79,7 @@ export default function ProductDetailClient({ slug }: ProductDetailClientProps) 
     const handleScroll = () => setShowMobileSticky(window.scrollY > 400);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   const showToast = (msg: string) => {

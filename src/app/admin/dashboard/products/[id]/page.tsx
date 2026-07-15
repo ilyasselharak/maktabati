@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   XCircle,
   Calendar,
-  Barcode,
   Layers,
   AlertTriangle,
 } from "lucide-react";

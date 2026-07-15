@@ -8,7 +8,6 @@ import {
   Minus,
   Plus,
   Trash2,
-  ArrowRight,
   ArrowLeft,
   ChevronLeft,
   Package,

@@ -11,7 +11,6 @@ import {
   Truck,
   Shield,
   Award,
-  Heart,
   ChevronLeft,
   Star,
   ShoppingBag,
