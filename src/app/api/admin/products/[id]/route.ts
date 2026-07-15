@@ -60,7 +60,7 @@ export async function PATCH(
       name,
       description,
       price,
-      categoryId,
+      category,
       stock,
       isActive,
       images,
@@ -69,7 +69,7 @@ export async function PATCH(
     } = await request.json();
 
     // Validate required fields
-    if (!name || !description || !price || !categoryId) {
+    if (!name || !description || !price || !category) {
       return NextResponse.json(
         { error: "الاسم والوصف والسعر والفئة مطلوبة" },
         { status: 400 }
@@ -127,7 +127,7 @@ export async function PATCH(
       name: name.trim(),
       description: description.trim(),
       price,
-      category: categoryId,
+      category: category,
       stock: stock !== undefined ? stock : existingProduct.stock,
       isActive: isActive !== undefined ? isActive : existingProduct.isActive,
       images: images || existingProduct.images,
