@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
   try {
     await dbConnect();
 
-    const { name, description } = await request.json();
+    const { name, description, image } = await request.json();
 
     // Validate required fields
     if (!name) {
@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       slug: finalSlug,
       description: description?.trim(),
+      image: image || undefined,
     });
 
     await newCategory.save();
@@ -123,7 +124,7 @@ export async function PUT(request: NextRequest) {
   try {
     await dbConnect();
 
-    const { id, name, description } = await request.json();
+    const { id, name, description, image } = await request.json();
 
     // Validate required fields
     if (!id || !name) {
@@ -171,6 +172,9 @@ export async function PUT(request: NextRequest) {
     // Update category
     existingCategory.name = name.trim();
     existingCategory.description = description?.trim();
+    if (image !== undefined) {
+      existingCategory.image = image || undefined;
+    }
     await existingCategory.save();
 
     return NextResponse.json({

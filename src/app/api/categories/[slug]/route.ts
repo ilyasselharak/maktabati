@@ -52,6 +52,7 @@ export async function GET(
         name: category.name,
         slug: category.slug,
         description: category.description,
+        image: category.image,
       },
       products,
     });

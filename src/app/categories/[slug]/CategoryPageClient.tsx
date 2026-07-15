@@ -37,6 +37,7 @@ interface CategoryData {
   name: string;
   slug: string;
   description?: string;
+  image?: string;
 }
 
 interface CategoryPageClientProps {
@@ -172,7 +173,17 @@ export default function CategoryPageClient({ slug }: CategoryPageClientProps) {
           {/* Category Info */}
           <div className="pb-10 pt-2">
             <div className="flex items-center gap-4 mb-4">
-              <span className="text-5xl">{getCategoryIcon(category.name)}</span>
+              {category.image ? (
+                <Image
+                  src={category.image}
+                  alt={category.name}
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 object-cover rounded-xl"
+                />
+              ) : (
+                <span className="text-5xl">{getCategoryIcon(category.name)}</span>
+              )}
               <div>
                 <h1 className="text-3xl font-bold text-slate-900">{category.name}</h1>
                 {category.description && (

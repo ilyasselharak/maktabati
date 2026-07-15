@@ -11,12 +11,14 @@ import {
   AlertTriangle,
   Check,
   X,
+  Upload,
 } from "lucide-react";
 
 interface Category {
   _id: string;
   name: string;
   description?: string;
+  image?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -35,8 +37,10 @@ export default function CategoriesPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    image: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -108,7 +112,7 @@ export default function CategoriesPage() {
         setSuccess(
           editingCategory ? "تم تحديث الفئة بنجاح" : "تم إضافة الفئة بنجاح"
         );
-        setFormData({ name: "", description: "" });
+        setFormData({ name: "", description: "", image: "" });
         setShowAddModal(false);
         setShowEditModal(false);
         setEditingCategory(null);
@@ -131,6 +135,7 @@ export default function CategoriesPage() {
     setFormData({
       name: category.name,
       description: category.description || "",
+      image: category.image || "",
     });
     setShowEditModal(true);
   };
@@ -172,9 +177,44 @@ export default function CategoriesPage() {
   };
 
   const openAddModal = () => {
-    setFormData({ name: "", description: "" });
+    setFormData({ name: "", description: "", image: "" });
     setEditingCategory(null);
     setShowAddModal(true);
+  };
+
+  const handleImageUpload = async (file: File) => {
+    setIsUploading(true);
+    setError("");
+
+    try {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+
+      const token = localStorage.getItem("adminToken");
+      const response = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formDataUpload,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFormData((prev) => ({ ...prev, image: data.url }));
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setError(errorData.error || "فشل رفع الصورة");
+      }
+    } catch {
+      setError("فشل رفع الصورة");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData((prev) => ({ ...prev, image: "" }));
   };
 
   const Modal = ({
@@ -390,6 +430,50 @@ export default function CategoriesPage() {
                   placeholder="وصف مختصر للفئة..."
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  صورة الفئة
+                </label>
+                {formData.image ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={formData.image}
+                      alt="صورة الفئة"
+                      className="h-32 w-32 object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-gray-300 border-dashed rounded-lg p-4 text-center">
+                    <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                    <label
+                      htmlFor="add-image-upload"
+                      className="cursor-pointer"
+                    >
+                      <span className="mt-2 block text-sm font-medium text-gray-900">
+                        {isUploading ? "جاري الرفع..." : "اختر صورة"}
+                      </span>
+                      <input
+                        id="add-image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          e.target.files?.[0] && handleImageUpload(e.target.files[0])
+                        }
+                        className="sr-only"
+                        disabled={isUploading}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
@@ -456,6 +540,50 @@ export default function CategoriesPage() {
                   className="mt-1 block w-full text-black border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   placeholder="وصف مختصر للفئة..."
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  صورة الفئة
+                </label>
+                {formData.image ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={formData.image}
+                      alt="صورة الفئة"
+                      className="h-32 w-32 object-cover rounded-lg border border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-gray-300 border-dashed rounded-lg p-4 text-center">
+                    <Upload className="mx-auto h-8 w-8 text-gray-400" />
+                    <label
+                      htmlFor="edit-image-upload"
+                      className="cursor-pointer"
+                    >
+                      <span className="mt-2 block text-sm font-medium text-gray-900">
+                        {isUploading ? "جاري الرفع..." : "اختر صورة"}
+                      </span>
+                      <input
+                        id="edit-image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) =>
+                          e.target.files?.[0] && handleImageUpload(e.target.files[0])
+                        }
+                        className="sr-only"
+                        disabled={isUploading}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
 

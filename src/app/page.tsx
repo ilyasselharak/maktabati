@@ -83,7 +83,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  const [categories, setCategories] = useState<{ _id: string; name: string; slug?: string }[]>([]);
+  const [categories, setCategories] = useState<{ _id: string; name: string; slug?: string; image?: string }[]>([]);
 
   useEffect(() => {
     fetchFeaturedProducts();
@@ -158,14 +158,18 @@ export default function Home() {
     }
   };
 
-  const getCategoryMeta = (name: string) => {
+  const getCategoryMeta = (name: string, categoryImage?: string) => {
     const metaMap: Record<string, { icon: typeof BookOpen; color: string; image: string }> = {
       "الكتب المدرسية": { icon: BookOpen, color: "from-blue-500 to-indigo-400", image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=300&fit=crop" },
       "أدوات الكتابة": { icon: PenTool, color: "from-emerald-500 to-teal-400", image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop" },
       "لوازم الفنون": { icon: Palette, color: "from-violet-500 to-purple-400", image: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=400&h=300&fit=crop" },
       "الحاسبات": { icon: Calculator, color: "from-amber-500 to-orange-400", image: "https://images.unsplash.com/photo-1572177812156-58036aae439c?w=400&h=300&fit=crop" },
     };
-    return metaMap[name] || { icon: BookOpen, color: "from-indigo-500 to-purple-400", image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400&h=300&fit=crop" };
+    const meta = metaMap[name] || { icon: BookOpen, color: "from-indigo-500 to-purple-400", image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400&h=300&fit=crop" };
+    return {
+      ...meta,
+      image: categoryImage || meta.image,
+    };
   };
 
   const features = [
@@ -283,7 +287,7 @@ export default function Home() {
               ))
             ) : (
               categories.map((category) => {
-                const meta = getCategoryMeta(category.name);
+                const meta = getCategoryMeta(category.name, category.image);
                 const Icon = meta.icon;
                 return (
                   <Link
