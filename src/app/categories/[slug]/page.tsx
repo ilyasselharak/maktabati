@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import dbConnect from "../../../lib/utils/database";
+import Category from "../../../lib/models/Category";
 import CategoryPageClient from "./CategoryPageClient";
 
 interface PageProps {
@@ -8,16 +10,39 @@ interface PageProps {
 
 async function getCategory(slug: string) {
   try {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
-    const res = await fetch(`${baseUrl}/api/categories/${slug}`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.category || null;
-  } catch {
+    await dbConnect();
+
+    let category = await Category.findOne({ slug });
+
+    if (!category) {
+      console.warn(`[CategoryPage] Category not found for slug: "${slug}"`);
+      return null;
+    }
+
+    // Auto-generate slug if missing
+    if (!category.slug) {
+      const { slugify } = await import("../../../lib/utils/slugify");
+      let newSlug = slugify(category.name);
+      if (!newSlug) newSlug = "category";
+      let suffix = 1;
+      const baseSlug = newSlug;
+      while (await Category.findOne({ slug: newSlug, _id: { $ne: category._id } })) {
+        newSlug = `${baseSlug}-${suffix}`;
+        suffix++;
+      }
+      category.slug = newSlug;
+      await category.save();
+    }
+
+    return {
+      _id: category._id.toString(),
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      image: category.image,
+    };
+  } catch (error) {
+    console.error(`[CategoryPage] Error fetching category "${slug}":`, error);
     return null;
   }
 }
