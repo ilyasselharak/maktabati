@@ -160,7 +160,7 @@ export default function Header({
       e.preventDefault();
       if (highlightedIndex >= 0 && searchResults[highlightedIndex]) {
         const p = searchResults[highlightedIndex];
-        handleSelectProduct(p.slug || p._id);
+        handleSelectProduct(p.slug!);
       } else {
         handleSearchSubmit(e);
       }
@@ -290,7 +290,7 @@ export default function Header({
                           {searchResults.map((product, index) => (
                             <button
                               key={product._id}
-                              onClick={() => handleSelectProduct(product.slug || product._id)}
+                              onClick={() => handleSelectProduct(product.slug!)}
                               className={`w-full flex items-center gap-3 px-4 py-2.5 text-start transition-all ${
                                 index === highlightedIndex
                                   ? "bg-indigo-50"

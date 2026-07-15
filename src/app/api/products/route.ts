@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "../../../lib/utils/database";
 import Product from "../../../lib/models/Product";
+import { slugify } from "../../../lib/utils/slugify";
 
 export async function GET(request: NextRequest) {
   try {
@@ -82,6 +83,22 @@ export async function GET(request: NextRequest) {
       .skip(skip)
       .limit(limit)
       .lean();
+
+    // Auto-generate slugs for products missing them
+    for (const product of products) {
+      if (!product.slug) {
+        let baseSlug = slugify(product.name);
+        if (!baseSlug) baseSlug = "product";
+        let finalSlug = baseSlug;
+        let suffix = 1;
+        while (await Product.findOne({ slug: finalSlug, _id: { $ne: product._id } })) {
+          finalSlug = `${baseSlug}-${suffix}`;
+          suffix++;
+        }
+        await Product.updateOne({ _id: product._id }, { $set: { slug: finalSlug } });
+        product.slug = finalSlug;
+      }
+    }
 
     // Get total count for pagination
     const total = await Product.countDocuments(query);

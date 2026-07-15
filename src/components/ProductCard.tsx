@@ -62,7 +62,7 @@ export default function ProductCard({
 
   const handleCardClick = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
-    router.push(`/products/${product.slug || product._id}`);
+    router.push(`/products/${product.slug!}`);
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {

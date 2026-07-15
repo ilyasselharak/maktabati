@@ -540,7 +540,7 @@ export default function ProductDetailClient({ slug }: ProductDetailClientProps) 
               {relatedProducts.map((rp) => (
                 <Link
                   key={rp._id}
-                  href={`/products/${rp.slug || rp._id}`}
+                  href={`/products/${rp.slug!}`}
                   className="group bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-lg hover:shadow-slate-200/50 hover:-translate-y-0.5 transition-all duration-300"
                 >
                   <div className="relative aspect-square overflow-hidden bg-slate-50">
