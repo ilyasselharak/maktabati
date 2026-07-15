@@ -12,13 +12,13 @@ export async function GET(request: NextRequest) {
     await dbConnect();
 
     // Query by exact slug
-    const product = await Product.findOne({ slug }).populate("category", "name slug").lean();
+    const product = await Product.findOne({ slug }).populate("category", "name slug").lean() as Record<string, unknown> | null;
 
     if (!product) {
       // Also try case-insensitive
       const caseInsensitive = await Product.findOne({
         slug: { $regex: new RegExp(`^${slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
-      }).lean();
+      }).lean() as Record<string, unknown> | null;
 
       return NextResponse.json({
         found: false,
