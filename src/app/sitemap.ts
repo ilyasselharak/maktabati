@@ -6,7 +6,7 @@ import Category from "@/lib/models/Category";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://www.maktabati.ma";
+  const baseUrl = "https://maktabalik.com";
 
   // Static routes
   const staticRoutes: MetadataRoute.Sitemap = [
