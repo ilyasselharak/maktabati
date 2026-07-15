@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateRequest } from "../../../../../lib/middleware/auth";
 import dbConnect from "../../../../../lib/utils/database";
 import Product from "../../../../../lib/models/Product";
+import { slugify } from "../../../../../lib/utils/slugify";
 
 export async function GET(
   request: NextRequest,
@@ -94,20 +95,42 @@ export async function PATCH(
       return NextResponse.json({ error: "المنتج غير موجود" }, { status: 404 });
     }
 
+    // Generate new slug if name changed or slug is missing
+    const nameChanged = name.trim() !== existingProduct.name;
+    const shouldUpdateSlug = nameChanged || !existingProduct.slug;
+    let finalSlug = existingProduct.slug;
+
+    if (shouldUpdateSlug) {
+      let baseSlug = slugify(name.trim());
+      if (!baseSlug) baseSlug = "product";
+      finalSlug = baseSlug;
+      let suffix = 1;
+      while (await Product.findOne({ slug: finalSlug, _id: { $ne: resolvedParams.id } })) {
+        finalSlug = `${baseSlug}-${suffix}`;
+        suffix++;
+      }
+    }
+
     // Update product
+    const updateData: Record<string, unknown> = {
+      name: name.trim(),
+      description: description.trim(),
+      price,
+      category: categoryId,
+      stock: stock !== undefined ? stock : existingProduct.stock,
+      isActive: isActive !== undefined ? isActive : existingProduct.isActive,
+      images: images || existingProduct.images,
+      tags: tags !== undefined ? tags : existingProduct.tags,
+      updatedAt: new Date(),
+    };
+
+    if (shouldUpdateSlug) {
+      updateData.slug = finalSlug;
+    }
+
     const updatedProduct = await Product.findByIdAndUpdate(
       resolvedParams.id,
-      {
-        name: name.trim(),
-        description: description.trim(),
-        price,
-        category: categoryId,
-        stock: stock !== undefined ? stock : existingProduct.stock,
-        isActive: isActive !== undefined ? isActive : existingProduct.isActive,
-        images: images || existingProduct.images,
-        tags: tags !== undefined ? tags : existingProduct.tags,
-        updatedAt: new Date(),
-      },
+      updateData,
       { new: true }
     ).populate("category", "name slug");
 

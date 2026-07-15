@@ -31,10 +31,10 @@ export async function GET(
     if (!product.slug) {
       const { slugify } = await import("../../../../lib/utils/slugify");
       let newSlug = slugify(product.name);
-      // Check uniqueness
+      if (!newSlug) newSlug = "product";
       let suffix = 1;
       const baseSlug = newSlug;
-      while (await Product.findOne({ slug: newSlug })) {
+      while (await Product.findOne({ slug: newSlug, _id: { $ne: product._id } })) {
         newSlug = `${baseSlug}-${suffix}`;
         suffix++;
       }
