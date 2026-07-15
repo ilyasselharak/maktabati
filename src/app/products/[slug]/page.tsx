@@ -13,32 +13,42 @@ async function getProduct(slug: string) {
   try {
     await dbConnect();
 
+    // Exact match by slug
     let product = await Product.findOne({ slug }).populate("category", "name slug");
 
+    // Fallback: find by _id if slug looks like an ObjectId
     if (!product && mongoose.Types.ObjectId.isValid(slug)) {
       product = await Product.findById(slug).populate("category", "name slug");
-    }
 
-    if (!product) return null;
-
-    if (!product.slug) {
-      const { slugify } = await import("../../../lib/utils/slugify");
-      let newSlug = slugify(product.name);
-      if (!newSlug) newSlug = "product";
-      let suffix = 1;
-      const baseSlug = newSlug;
-      while (await Product.findOne({ slug: newSlug, _id: { $ne: product._id } })) {
-        newSlug = `${baseSlug}-${suffix}`;
-        suffix++;
+      // Auto-generate slug for product found by ID
+      if (product && !product.slug) {
+        const { slugify } = await import("../../../lib/utils/slugify");
+        let newSlug = slugify(product.name);
+        if (!newSlug) newSlug = "product";
+        let suffix = 1;
+        const baseSlug = newSlug;
+        while (await Product.findOne({ slug: newSlug, _id: { $ne: product._id } })) {
+          newSlug = `${baseSlug}-${suffix}`;
+          suffix++;
+        }
+        product.slug = newSlug;
+        await product.save();
       }
-      product.slug = newSlug;
-      await product.save();
     }
 
-    if (!product.isActive) return null;
+    if (!product) {
+      console.warn(`[ProductPage] Product not found for slug: "${slug}"`);
+      return null;
+    }
+
+    if (!product.isActive) {
+      console.warn(`[ProductPage] Product "${slug}" exists but is inactive`);
+      return null;
+    }
 
     return product;
-  } catch {
+  } catch (error) {
+    console.error(`[ProductPage] Error fetching product "${slug}":`, error);
     return null;
   }
 }
