@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import dbConnect from "../../../lib/utils/database";
+import Product from "../../../lib/models/Product";
+import mongoose from "mongoose";
 import ProductDetailClient from "./ProductDetailClient";
 
 interface PageProps {
@@ -8,15 +11,33 @@ interface PageProps {
 
 async function getProduct(slug: string) {
   try {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
-    const res = await fetch(`${baseUrl}/api/products/${slug}`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.product || null;
+    await dbConnect();
+
+    let product = await Product.findOne({ slug }).populate("category", "name slug");
+
+    if (!product && mongoose.Types.ObjectId.isValid(slug)) {
+      product = await Product.findById(slug).populate("category", "name slug");
+    }
+
+    if (!product) return null;
+
+    if (!product.slug) {
+      const { slugify } = await import("../../../lib/utils/slugify");
+      let newSlug = slugify(product.name);
+      if (!newSlug) newSlug = "product";
+      let suffix = 1;
+      const baseSlug = newSlug;
+      while (await Product.findOne({ slug: newSlug, _id: { $ne: product._id } })) {
+        newSlug = `${baseSlug}-${suffix}`;
+        suffix++;
+      }
+      product.slug = newSlug;
+      await product.save();
+    }
+
+    if (!product.isActive) return null;
+
+    return product;
   } catch {
     return null;
   }
