@@ -12,7 +12,7 @@ async function getCategory(slug: string) {
   try {
     await dbConnect();
 
-    let category = await Category.findOne({ slug });
+    const category = await Category.findOne({ slug });
 
     if (!category) {
       console.warn(`[CategoryPage] Category not found for slug: "${slug}"`);
