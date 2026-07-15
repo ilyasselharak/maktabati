@@ -45,8 +45,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .lean();
     const raw = JSON.parse(JSON.stringify(products)) as { slug: string; updatedAt?: string }[];
     productRoutes = raw.map((p) => ({
-      url: `${baseUrl}/products/${p.slug}`,
-      lastModified: p.updatedAt || new Date(),
+      url: `${baseUrl}/products/${encodeURIComponent(p.slug)}`,
+      lastModified: p.updatedAt ? new Date(p.updatedAt) : new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.8,
     }));
@@ -63,8 +63,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .lean();
     const raw = JSON.parse(JSON.stringify(categories)) as { slug: string; updatedAt?: string }[];
     categoryRoutes = raw.map((c) => ({
-      url: `${baseUrl}/categories/${c.slug}`,
-      lastModified: c.updatedAt || new Date(),
+      url: `${baseUrl}/categories/${encodeURIComponent(c.slug)}`,
+      lastModified: c.updatedAt ? new Date(c.updatedAt) : new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.7,
     }));
