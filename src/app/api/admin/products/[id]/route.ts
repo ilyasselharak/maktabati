@@ -65,6 +65,7 @@ export async function PATCH(
       isActive,
       images,
       tags,
+      slug: customSlug,
     } = await request.json();
 
     // Validate required fields
@@ -95,12 +96,22 @@ export async function PATCH(
       return NextResponse.json({ error: "المنتج غير موجود" }, { status: 404 });
     }
 
-    // Generate new slug if name changed or slug is missing
-    const nameChanged = name.trim() !== existingProduct.name;
-    const shouldUpdateSlug = nameChanged || !existingProduct.slug;
+    // Determine slug: use custom slug if provided, otherwise auto-generate
     let finalSlug = existingProduct.slug;
 
-    if (shouldUpdateSlug) {
+    if (customSlug && customSlug.trim()) {
+      // Custom slug provided — validate uniqueness
+      const customSlugClean = customSlug.trim();
+      const slugExists = await Product.findOne({ slug: customSlugClean, _id: { $ne: resolvedParams.id } });
+      if (slugExists) {
+        return NextResponse.json(
+          { error: "هذا الرابط مستخدم بالفعل منتج آخر" },
+          { status: 409 }
+        );
+      }
+      finalSlug = customSlugClean;
+    } else if (name.trim() !== existingProduct.name || !existingProduct.slug) {
+      // Name changed or slug missing — auto-generate
       let baseSlug = slugify(name.trim());
       if (!baseSlug) baseSlug = "product";
       finalSlug = baseSlug;
@@ -124,7 +135,7 @@ export async function PATCH(
       updatedAt: new Date(),
     };
 
-    if (shouldUpdateSlug) {
+    if (finalSlug) {
       updateData.slug = finalSlug;
     }
 

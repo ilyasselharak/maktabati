@@ -15,6 +15,7 @@ import {
   ImageIcon,
   Loader2,
 } from "lucide-react";
+import { slugify } from "../../../../../../lib/utils/slugify";
 
 interface Category {
   _id: string;
@@ -31,6 +32,7 @@ interface Product {
   stock: number;
   isActive: boolean;
   tags: string[];
+  slug?: string;
 }
 
 export default function EditProductPage() {
@@ -45,6 +47,7 @@ export default function EditProductPage() {
 
   const [formData, setFormData] = useState({
     name: "",
+    slug: "",
     description: "",
     price: "",
     category: "",
@@ -65,6 +68,7 @@ export default function EditProductPage() {
         const p = data.product;
         setFormData({
           name: p.name,
+          slug: p.slug || "",
           description: p.description,
           price: p.price.toString(),
           category: p.category._id,
@@ -158,6 +162,7 @@ export default function EditProductPage() {
           tags: formData.tags
             ? formData.tags.split(",").map((t) => t.trim()).filter((t) => t.length > 0)
             : [],
+          slug: formData.slug.trim() || undefined,
         }),
       });
 
@@ -251,6 +256,29 @@ export default function EditProductPage() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="slug" className="block text-sm font-semibold text-slate-700 mb-2">الرابط (Slug)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text" id="slug" name="slug"
+                  value={formData.slug} onChange={handleChange}
+                  className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 focus:bg-white transition-all"
+                  placeholder="منجرة-ديلي-سموتي-deli-smooth"
+                  dir="ltr"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData((prev) => ({ ...prev, slug: slugify(prev.name) }));
+                  }}
+                  className="px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-200 transition-all whitespace-nowrap"
+                >
+                  توليد من الاسم
+                </button>
+              </div>
+              <p className="mt-1.5 text-xs text-slate-400">اتركه فارغاً للتوليد التلقائي من اسم المنتج</p>
             </div>
 
             <div>

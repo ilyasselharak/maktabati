@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   try {
     await dbConnect();
 
-    const { name, description, price, category, stock, images, tags } =
+    const { name, description, price, category, stock, images, tags, slug: customSlug } =
       await request.json();
 
     // Validate required fields
@@ -81,14 +81,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique slug
-    let baseSlug = slugify(name.trim());
-    if (!baseSlug) baseSlug = "product";
-    let finalSlug = baseSlug;
-    let suffix = 1;
-    while (await Product.findOne({ slug: finalSlug })) {
-      finalSlug = `${baseSlug}-${suffix}`;
-      suffix++;
+    // Determine slug: use custom slug if provided, otherwise auto-generate
+    let finalSlug: string;
+    if (customSlug && customSlug.trim()) {
+      const customSlugClean = customSlug.trim();
+      const slugExists = await Product.findOne({ slug: customSlugClean });
+      if (slugExists) {
+        return NextResponse.json(
+          { error: "هذا الرابط مستخدم بالفعل" },
+          { status: 409 }
+        );
+      }
+      finalSlug = customSlugClean;
+    } else {
+      let baseSlug = slugify(name.trim());
+      if (!baseSlug) baseSlug = "product";
+      finalSlug = baseSlug;
+      let suffix = 1;
+      while (await Product.findOne({ slug: finalSlug })) {
+        finalSlug = `${baseSlug}-${suffix}`;
+        suffix++;
+      }
     }
 
     // Create new product

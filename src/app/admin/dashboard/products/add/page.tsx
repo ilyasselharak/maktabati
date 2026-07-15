@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
+import { slugify } from "../../../../../lib/utils/slugify";
 
 interface Category {
   _id: string;
@@ -30,6 +31,7 @@ export default function AddProductPage() {
 
   const [formData, setFormData] = useState({
     name: "",
+    slug: "",
     description: "",
     price: "",
     category: "",
@@ -176,6 +178,7 @@ export default function AddProductPage() {
                 .map((tag) => tag.trim())
                 .filter((tag) => tag.length > 0)
             : [],
+          slug: formData.slug.trim() || undefined,
         }),
       });
 
@@ -284,6 +287,39 @@ export default function AddProductPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="slug"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  الرابط (Slug)
+                </label>
+                <div className="mt-1 flex gap-2">
+                  <input
+                    type="text"
+                    id="slug"
+                    name="slug"
+                    value={formData.slug}
+                    onChange={handleChange}
+                    className="flex-1 block w-full text-black border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="كتاب-الرياضيات-المستوى-الأول"
+                    dir="ltr"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({ ...prev, slug: slugify(prev.name) }));
+                    }}
+                    className="px-4 py-2 bg-gray-100 text-gray-600 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors whitespace-nowrap"
+                  >
+                    توليد من الاسم
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  اتركه فارغاً للتوليد التلقائي من اسم المنتج
+                </p>
               </div>
 
               <div>
