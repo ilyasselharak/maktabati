@@ -43,9 +43,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const products = await Product.find({ isActive: true, slug: { $exists: true } })
       .select("slug updatedAt")
       .lean();
-    productRoutes = products.map((p) => ({
-      url: `${baseUrl}/products/${(p as Record<string, unknown>).slug}`,
-      lastModified: (p as Record<string, unknown>).updatedAt || new Date(),
+    const raw = JSON.parse(JSON.stringify(products)) as { slug: string; updatedAt?: string }[];
+    productRoutes = raw.map((p) => ({
+      url: `${baseUrl}/products/${p.slug}`,
+      lastModified: p.updatedAt || new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.8,
     }));
@@ -60,7 +61,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const categories = await Category.find({ slug: { $exists: true } })
       .select("slug updatedAt")
       .lean();
-    categoryRoutes = categories.map((c) => ({
+    const raw = JSON.parse(JSON.stringify(categories)) as { slug: string; updatedAt?: string }[];
+    categoryRoutes = raw.map((c) => ({
       url: `${baseUrl}/categories/${c.slug}`,
       lastModified: c.updatedAt || new Date(),
       changeFrequency: "weekly" as const,
